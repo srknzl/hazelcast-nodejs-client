@@ -33,8 +33,8 @@ import {ReliableTopicListenerRunner} from './ReliableTopicListenerRunner';
 import {MessageListener} from '../MessageListener';
 import {TopicOverloadPolicy} from '../TopicOverloadPolicy';
 import {ClientConfig, ClientConfigImpl} from '../../config/Config';
-import {ClusterService} from "../../invocation/ClusterService";
-import {LoggingService} from "../../logging/LoggingService";
+import {ClusterService} from '../../invocation/ClusterService';
+import {LoggingService} from '../../logging/LoggingService';
 
 interface ClientForReliableTopicProxy extends ClientForBaseProxy {
     getClusterService(): ClusterService;
