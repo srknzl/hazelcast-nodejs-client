@@ -26,7 +26,7 @@ import {randomInt} from '../util/Util';
 import {BaseProxy, ClientForBaseProxy} from './BaseProxy';
 import {PNCounter} from './PNCounter';
 import {MemberImpl} from '../core/Member';
-import {ClusterService} from "../invocation/ClusterService";
+import {ClusterService} from '../invocation/ClusterService';
 
 interface ClientForPNCounterProxy extends ClientForBaseProxy {
     getClusterService(): ClusterService;

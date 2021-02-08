@@ -26,7 +26,7 @@ import {AtomicLongCompareAndSetCodec} from '../../codec/AtomicLongCompareAndSetC
 import {AtomicLongGetCodec} from '../../codec/AtomicLongGetCodec';
 import {AtomicLongGetAndAddCodec} from '../../codec/AtomicLongGetAndAddCodec';
 import {AtomicLongGetAndSetCodec} from '../../codec/AtomicLongGetAndSetCodec';
-import {ClientForBaseProxy} from "../BaseProxy";
+import {ClientForBaseProxy} from '../BaseProxy';
 
 export interface ClientForAtomicLongProxy extends ClientForBaseProxy {
 

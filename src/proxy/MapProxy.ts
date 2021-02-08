@@ -92,8 +92,8 @@ import {IndexConfig} from '../config/IndexConfig';
 import {IndexUtil} from '../util/IndexUtil';
 import {PagingPredicateHolder} from '../protocol/PagingPredicateHolder';
 import {MapEntriesWithPagingPredicateCodec} from '../codec/MapEntriesWithPagingPredicateCodec';
-import {ListenerService} from "../listener/ListenerService";
-import {ClusterService} from "../invocation/ClusterService";
+import {ListenerService} from '../listener/ListenerService';
+import {ClusterService} from '../invocation/ClusterService';
 
 type EntryEventHander = (key: Data, value: Data, oldValue: Data, mergingValue: Data, eventType: number,
                          uuid: UUID, numberOfAffectedEntries: number) => void;

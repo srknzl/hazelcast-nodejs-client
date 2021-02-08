@@ -68,11 +68,11 @@ import {AuthenticationStatus} from '../protocol/AuthenticationStatus';
 import {Invocation, InvocationService} from '../invocation/InvocationService';
 import {PartitionService, PartitionServiceImpl} from '../PartitionService';
 import {AddressProvider} from '../connection/AddressProvider';
-import {LoggingService} from "../logging/LoggingService";
-import {ClientFailoverConfig} from "../config";
-import {ClusterService} from "../invocation/ClusterService";
-import {SerializationService} from "../serialization/SerializationService";
-import {ClientForClientConnection} from "../network/ClientConnection";
+import {LoggingService} from '../logging/LoggingService';
+import {ClientFailoverConfig} from '../config';
+import {ClusterService} from '../invocation/ClusterService';
+import {SerializationService} from '../serialization/SerializationService';
+import {ClientForClientConnection} from '../network/ClientConnection';
 
 const CONNECTION_REMOVED_EVENT_NAME = 'connectionRemoved';
 const CONNECTION_ADDED_EVENT_NAME = 'connectionAdded';

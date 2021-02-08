@@ -30,10 +30,10 @@ import {ListenerMessageCodec} from './ListenerMessageCodec';
 import {deferredPromise} from '../util/Util';
 import {UuidUtil} from '../util/UuidUtil';
 import {ILogger} from '../logging';
-import {LoggingService} from "../logging/LoggingService";
-import {ClientConfig} from "../config";
-import {ClientConnectionManager} from "../network/ClientConnectionManager";
-import {ClientForInvocation} from "../invocation/InvocationService";
+import {LoggingService} from '../logging/LoggingService';
+import {ClientConfig} from '../config';
+import {ClientConnectionManager} from '../network/ClientConnectionManager';
+import {ClientForInvocation} from '../invocation/InvocationService';
 
 interface ClientForListenerService extends ClientForInvocation {
     getLoggingService(): LoggingService;

@@ -46,9 +46,9 @@ import {
     ReadOnlyLazyList,
     UUID
 } from '../core';
-import {ClusterService} from "../invocation/ClusterService";
-import {ListenerService} from "../listener/ListenerService";
-import {ClientForSetProxy} from "./SetProxy";
+import {ClusterService} from '../invocation/ClusterService';
+import {ListenerService} from '../listener/ListenerService';
+import {ClientForSetProxy} from './SetProxy';
 
 export interface ClientForListProxy extends ClientForSetProxy {
     getClusterService(): ClusterService;

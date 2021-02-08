@@ -17,8 +17,8 @@
 import {ILogger} from './logging/ILogger';
 import {ClientConnection} from './network/ClientConnection';
 import {ClientOfflineError, UUID} from './core';
-import {LoggingService} from "./logging/LoggingService";
-import {SerializationService} from "./serialization/SerializationService";
+import {LoggingService} from './logging/LoggingService';
+import {SerializationService} from './serialization/SerializationService';
 
 /**
  * Partition service for Hazelcast clients. Allows to retrieve information

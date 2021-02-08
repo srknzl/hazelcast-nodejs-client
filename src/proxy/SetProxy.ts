@@ -35,8 +35,8 @@ import {ISet} from './ISet';
 import {ClientForPartititonSpecificProxy, PartitionSpecificProxy} from './PartitionSpecificProxy';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {UUID} from '../core';
-import {ClusterService} from "../invocation/ClusterService";
-import {ListenerService} from "../listener/ListenerService";
+import {ClusterService} from '../invocation/ClusterService';
+import {ListenerService} from '../listener/ListenerService';
 
 
 export interface ClientForSetProxy extends ClientForPartititonSpecificProxy {

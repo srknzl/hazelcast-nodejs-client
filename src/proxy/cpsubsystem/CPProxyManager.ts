@@ -32,7 +32,7 @@ import {RaftGroupId} from './RaftGroupId';
 import {CPGroupCreateCPGroupCodec} from '../../codec/CPGroupCreateCPGroupCodec';
 import {SemaphoreGetSemaphoreTypeCodec} from '../../codec/SemaphoreGetSemaphoreTypeCodec';
 import {assertString} from '../../util/Util';
-import {ClientForCPSessionAwareProxy} from "./CPSessionAwareProxy";
+import {ClientForCPSessionAwareProxy} from './CPSessionAwareProxy';
 
 const DEFAULT_GROUP_NAME = 'default';
 

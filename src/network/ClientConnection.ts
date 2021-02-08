@@ -28,10 +28,10 @@ import {
     Frame,
     SIZE_OF_FRAME_LENGTH_AND_FLAGS
 } from '../protocol/ClientMessage';
-import {ClientConfig} from "../config";
-import {LoggingService} from "../logging/LoggingService";
-import {ClientConnectionManager} from "./ClientConnectionManager";
-import {LifecycleService} from "../LifecycleService";
+import {ClientConfig} from '../config';
+import {LoggingService} from '../logging/LoggingService';
+import {ClientConnectionManager} from './ClientConnectionManager';
+import {LifecycleService} from '../LifecycleService';
 
 const FROZEN_ARRAY = Object.freeze([]) as OutputQueueItem[];
 const PROPERTY_PIPELINING_ENABLED = 'hazelcast.client.autopipelining.enabled';

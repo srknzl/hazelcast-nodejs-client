@@ -23,7 +23,7 @@ import {AtomicRefCompareAndSetCodec} from '../../codec/AtomicRefCompareAndSetCod
 import {AtomicRefGetCodec} from '../../codec/AtomicRefGetCodec';
 import {AtomicRefSetCodec} from '../../codec/AtomicRefSetCodec';
 import {AtomicRefContainsCodec} from '../../codec/AtomicRefContainsCodec';
-import {ClientForBaseProxy} from "../BaseProxy";
+import {ClientForBaseProxy} from '../BaseProxy';
 
 interface ClientForAtomicRefProxy extends ClientForBaseProxy {
 

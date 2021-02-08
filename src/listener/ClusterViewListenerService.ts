@@ -24,7 +24,7 @@ import {ClientAddClusterViewListenerCodec} from '../codec/ClientAddClusterViewLi
 import {ClientMessage} from '../protocol/ClientMessage';
 import {UUID} from '../core/UUID';
 import {Invocation, InvocationService} from '../invocation/InvocationService';
-import {LoggingService} from "../logging/LoggingService";
+import {LoggingService} from '../logging/LoggingService';
 
 
 interface ClientForClusterViewListenerService {

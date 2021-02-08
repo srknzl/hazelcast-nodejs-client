@@ -51,9 +51,9 @@ import {
 } from '../core';
 import * as SerializationUtil from '../serialization/SerializationUtil';
 import {MultiMapPutAllCodec} from '../codec/MultiMapPutAllCodec';
-import {ListenerService} from "../listener/ListenerService";
-import {LockReferenceIdGenerator} from "./LockReferenceIdGenerator";
-import {ClusterService} from "../invocation/ClusterService";
+import {ListenerService} from '../listener/ListenerService';
+import {LockReferenceIdGenerator} from './LockReferenceIdGenerator';
+import {ClusterService} from '../invocation/ClusterService';
 
 interface ClientForMultiMapProxy extends ClientForBaseProxy {
     getListenerService(): ListenerService;

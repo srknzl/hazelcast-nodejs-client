@@ -41,7 +41,7 @@ import {ClientCreateProxiesCodec} from '../codec/ClientCreateProxiesCodec';
 import {BaseProxy} from './BaseProxy';
 import {Ringbuffer} from './Ringbuffer';
 import {ClientConfig, ClientConfigImpl} from '../config/Config';
-import {ListenerService} from "../listener/ListenerService";
+import {ListenerService} from '../listener/ListenerService';
 
 /** @internal */
 export const NAMESPACE_SEPARATOR = '/';

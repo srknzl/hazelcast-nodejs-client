@@ -27,10 +27,10 @@ import {StaleReadDetectorImpl} from '../nearcache/StaleReadDetector';
 import {Data} from '../serialization';
 import {ClientForMapProxy, MapProxy} from './MapProxy';
 import {ClientMessage, ClientMessageHandler} from '../protocol/ClientMessage';
-import {NearCacheManager} from "../nearcache/NearCacheManager";
-import {LoggingService} from "../logging/LoggingService";
-import {RepairingTask} from "../nearcache/RepairingTask";
-import {ListenerService} from "../listener/ListenerService";
+import {NearCacheManager} from '../nearcache/NearCacheManager';
+import {LoggingService} from '../logging/LoggingService';
+import {RepairingTask} from '../nearcache/RepairingTask';
+import {ListenerService} from '../listener/ListenerService';
 
 export interface ClientForNearCachedMapProxy extends ClientForMapProxy {
     getNearCacheManager(): NearCacheManager;

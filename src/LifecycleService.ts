@@ -16,8 +16,8 @@
 
 import {EventEmitter} from 'events';
 import {ILogger} from './logging/ILogger';
-import {LoggingService} from "./logging/LoggingService";
-import {ClientConfig} from "./config";
+import {LoggingService} from './logging/LoggingService';
+import {ClientConfig} from './config';
 
 /**
  * Lifecycle states.

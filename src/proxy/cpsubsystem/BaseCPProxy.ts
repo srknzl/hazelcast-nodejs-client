@@ -20,8 +20,8 @@ import {RaftGroupId} from './RaftGroupId';
 import {CPGroupDestroyCPObjectCodec} from '../../codec/CPGroupDestroyCPObjectCodec';
 import {UnsupportedOperationError} from '../../core';
 import {Data} from '../../serialization';
-import {SerializationService} from "../../serialization/SerializationService";
-import {InvocationService} from "../../invocation/InvocationService";
+import {SerializationService} from '../../serialization/SerializationService';
+import {InvocationService} from '../../invocation/InvocationService';
 
 
 export interface ClientForBaseCPProxy {

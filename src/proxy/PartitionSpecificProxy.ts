@@ -17,7 +17,7 @@
 
 import {BaseProxy, ClientForBaseProxy} from './BaseProxy';
 import {ClientMessage} from '../protocol/ClientMessage';
-import {PartitionService} from "../PartitionService";
+import {PartitionService} from '../PartitionService';
 
 export interface ClientForPartititonSpecificProxy extends ClientForBaseProxy {
     getPartitionService(): PartitionService;

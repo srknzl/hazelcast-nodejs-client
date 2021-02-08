@@ -19,11 +19,11 @@ import {BuildInfo} from '../BuildInfo';
 import {Data} from '../serialization/Data';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {UUID} from '../core/UUID';
-import {InvocationService} from "../invocation/InvocationService";
-import {ProxyManager} from "./ProxyManager";
-import {PartitionService} from "../PartitionService";
-import {SerializationService} from "../serialization/SerializationService";
-import {ClientConnectionManager} from "../network/ClientConnectionManager";
+import {InvocationService} from '../invocation/InvocationService';
+import {ProxyManager} from './ProxyManager';
+import {PartitionService} from '../PartitionService';
+import {SerializationService} from '../serialization/SerializationService';
+import {ClientConnectionManager} from '../network/ClientConnectionManager';
 
 
 export interface ClientForBaseProxy {

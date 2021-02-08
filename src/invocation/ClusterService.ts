@@ -41,8 +41,8 @@ import {
     TargetDisconnectedError
 } from '../core';
 import {MemberInfo} from '../core/MemberInfo';
-import {LoggingService} from "../logging/LoggingService";
-import {ClusterFailoverService} from "../ClusterFailoverService";
+import {LoggingService} from '../logging/LoggingService';
+import {ClusterFailoverService} from '../ClusterFailoverService';
 
 class MemberListSnapshot {
     version: number;

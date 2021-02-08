@@ -42,8 +42,8 @@ import {Data} from '../serialization/Data';
 import {IQueue} from './IQueue';
 import {ClientForPartititonSpecificProxy, PartitionSpecificProxy} from './PartitionSpecificProxy';
 import {ClientMessage} from '../protocol/ClientMessage';
-import {ClusterService} from "../invocation/ClusterService";
-import {ListenerService} from "../listener/ListenerService";
+import {ClusterService} from '../invocation/ClusterService';
+import {ListenerService} from '../listener/ListenerService';
 
 interface ClientForQueueProxy extends ClientForPartititonSpecificProxy {
     getClusterService(): ClusterService;

@@ -35,8 +35,8 @@ import {
     cancelRepetitionTask,
     Task
 } from '../../util/Util';
-import {LoggingService} from "../../logging/LoggingService";
-import {InvocationService} from "../../invocation/InvocationService";
+import {LoggingService} from '../../logging/LoggingService';
+import {InvocationService} from '../../invocation/InvocationService';
 
 /** @internal */
 export class SessionState {

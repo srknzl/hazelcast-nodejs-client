@@ -23,7 +23,7 @@ import {
 } from './proxy';
 import {ClientForCPProxyManager, CPProxyManager} from './proxy/cpsubsystem/CPProxyManager';
 import {ClientForCPSessionManager, CPSessionManager} from './proxy/cpsubsystem/CPSessionManager';
-import {ClientForCPSessionAwareProxy} from "./proxy/cpsubsystem/CPSessionAwareProxy";
+import {ClientForCPSessionAwareProxy} from './proxy/cpsubsystem/CPSessionAwareProxy';
 
 /**
  * CP Subsystem is a component of Hazelcast that builds a strongly consistent

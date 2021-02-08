@@ -49,8 +49,8 @@ import {ClientForPartititonSpecificProxy, PartitionSpecificProxy} from './Partit
 import {MapEvent} from './MapListener';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {deserializeEntryList} from '../serialization/SerializationUtil';
-import {ListenerService} from "../listener/ListenerService";
-import {ClusterService} from "../invocation/ClusterService";
+import {ListenerService} from '../listener/ListenerService';
+import {ClusterService} from '../invocation/ClusterService';
 
 type EntryEventHander = (key: Data, value: Data, oldValue: Data, mergingValue: Data,
                          eventType: number, uuid: UUID, numberOfAffectedEntries: number) => void

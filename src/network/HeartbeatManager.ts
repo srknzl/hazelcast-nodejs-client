@@ -22,8 +22,8 @@ import {ClientConnectionManager} from './ClientConnectionManager';
 import {cancelRepetitionTask, scheduleWithRepetition, Task} from '../util/Util';
 import {TargetDisconnectedError} from '../core';
 import {Invocation, InvocationService} from '../invocation/InvocationService';
-import {LoggingService} from "../logging/LoggingService";
-import {ClientConfig} from "../config";
+import {LoggingService} from '../logging/LoggingService';
+import {ClientConfig} from '../config';
 
 const PROPERTY_HEARTBEAT_INTERVAL = 'hazelcast.client.heartbeat.interval';
 const PROPERTY_HEARTBEAT_TIMEOUT = 'hazelcast.client.heartbeat.timeout';
