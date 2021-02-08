@@ -15,9 +15,8 @@
  */
 /** @ignore *//** */
 
-import {HazelcastClient} from '../HazelcastClient';
 import {ClientConnection} from '../network/ClientConnection';
-import {CLIENT_TYPE} from '../network/ClientConnectionManager';
+import {CLIENT_TYPE, ClientConnectionManager} from '../network/ClientConnectionManager';
 import {Properties} from '../config/Properties';
 import {ClientStatisticsCodec} from '../codec/ClientStatisticsCodec';
 import {
@@ -35,10 +34,28 @@ import * as os from 'os';
 import {BuildInfo} from '../BuildInfo';
 import {ILogger} from '../logging/ILogger';
 import * as Long from 'long';
+import {ClientConfig} from "../config";
+import {LoggingService} from "../logging/LoggingService";
+import {InvocationService} from "../invocation/InvocationService";
+import {NearCacheManager} from "../nearcache/NearCacheManager";
 
 type GaugeDescription = {
     gaugeFn: () => number;
     type: ValueType;
+}
+
+interface ClientForStatistics {
+    getConfig(): ClientConfig;
+
+    getLoggingService(): LoggingService;
+
+    getInvocationService(): InvocationService;
+
+    getConnectionManager(): ClientConnectionManager;
+
+    getName(): string;
+
+    getNearCacheManager(): NearCacheManager;
 }
 
 /**
@@ -62,11 +79,11 @@ export class Statistics {
     private readonly enabled: boolean;
     private readonly properties: Properties;
     private readonly logger: ILogger;
-    private client: HazelcastClient;
+    private client: ClientForStatistics;
     private task: Task;
     private compressorErrorLogged = false;
 
-    constructor(clientInstance: HazelcastClient) {
+    constructor(clientInstance: ClientForStatistics) {
         this.properties = clientInstance.getConfig().properties;
         this.enabled = this.properties[Statistics.ENABLED] as boolean;
         this.client = clientInstance;
@@ -161,11 +178,11 @@ export class Statistics {
         try {
             // try a gauge function read, we will register it if it succeeds.
             gaugeFn();
-            this.allGauges[gaugeName] = { gaugeFn, type };
+            this.allGauges[gaugeName] = {gaugeFn, type};
         } catch (err) {
             this.logger.warn('Statistics', 'Could not collect data for gauge '
                 + gaugeName + ', it will not be registered', err);
-            this.allGauges[gaugeName] = { gaugeFn: () => null, type };
+            this.allGauges[gaugeName] = {gaugeFn: () => null, type};
         }
     }
 
@@ -219,7 +236,7 @@ export class Statistics {
         let descriptor: MetricDescriptor;
         if (dotIdx < 0) {
             // simple metric name
-            descriptor = { metric };
+            descriptor = {metric};
         } else {
             descriptor = {
                 prefix: metric.substring(0, dotIdx),

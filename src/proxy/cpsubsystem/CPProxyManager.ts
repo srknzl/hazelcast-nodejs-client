@@ -20,8 +20,7 @@ import {
     DistributedObject,
     IllegalStateError
 } from '../../core';
-import {HazelcastClient} from '../../HazelcastClient';
-import {AtomicLongProxy} from './AtomicLongProxy';
+import {AtomicLongProxy, ClientForAtomicLongProxy} from './AtomicLongProxy';
 import {AtomicRefProxy} from './AtomicRefProxy';
 import {CountDownLatchProxy} from './CountDownLatchProxy';
 import {FencedLock} from '../FencedLock';
@@ -33,6 +32,7 @@ import {RaftGroupId} from './RaftGroupId';
 import {CPGroupCreateCPGroupCodec} from '../../codec/CPGroupCreateCPGroupCodec';
 import {SemaphoreGetSemaphoreTypeCodec} from '../../codec/SemaphoreGetSemaphoreTypeCodec';
 import {assertString} from '../../util/Util';
+import {ClientForCPSessionAwareProxy} from "./CPSessionAwareProxy";
 
 const DEFAULT_GROUP_NAME = 'default';
 
@@ -67,6 +67,10 @@ export function getObjectNameForProxy(name: string): string {
     return objectName;
 }
 
+export interface ClientForCPProxyManager extends ClientForCPSessionAwareProxy, ClientForAtomicLongProxy {
+
+}
+
 /** @internal */
 export class CPProxyManager {
 
@@ -76,10 +80,10 @@ export class CPProxyManager {
     static readonly LOCK_SERVICE = 'hz:raft:lockService';
     static readonly SEMAPHORE_SERVICE = 'hz:raft:semaphoreService';
 
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForCPProxyManager;
     private readonly lockProxies: Map<string, FencedLockProxy> = new Map();
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForCPProxyManager) {
         this.client = client;
     }
 

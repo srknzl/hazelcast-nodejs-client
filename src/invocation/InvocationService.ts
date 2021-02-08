@@ -16,7 +16,6 @@
 /** @ignore *//** */
 
 import * as assert from 'assert';
-import {HazelcastClient} from '../HazelcastClient';
 import {
     ClientNotActiveError,
     HazelcastInstanceNotActiveError,
@@ -35,7 +34,7 @@ import {ListenerMessageCodec} from '../listener/ListenerMessageCodec';
 import {ClientLocalBackupListenerCodec} from '../codec/ClientLocalBackupListenerCodec';
 import {EXCEPTION_MESSAGE_TYPE} from '../codec/builtin/ErrorsCodec';
 import {ClientConnectionManager} from '../network/ClientConnectionManager';
-import {PartitionServiceImpl} from '../PartitionService';
+import {PartitionService, PartitionServiceImpl} from '../PartitionService';
 import {
     scheduleWithRepetition,
     cancelRepetitionTask,
@@ -43,6 +42,11 @@ import {
     deferredPromise,
     DeferredPromise
 } from '../util/Util';
+import {LoggingService} from "../logging/LoggingService";
+import {ClientConfig} from "../config";
+import {ListenerService} from "../listener/ListenerService";
+import {ClientErrorFactory} from "../protocol/ErrorFactory";
+import {LifecycleService} from "../LifecycleService";
 
 const MAX_FAST_INVOCATION_COUNT = 5;
 const PROPERTY_INVOCATION_RETRY_PAUSE_MILLIS = 'hazelcast.client.invocation.retry.pause.millis';
@@ -51,13 +55,35 @@ const PROPERTY_CLEAN_RESOURCES_MILLIS = 'hazelcast.client.internal.clean.resourc
 const PROPERTY_BACKUP_TIMEOUT_MILLIS = 'hazelcast.client.operation.backup.timeout.millis';
 const PROPERTY_FAIL_ON_INDETERMINATE_STATE = 'hazelcast.client.operation.fail.on.indeterminate.state';
 
+interface ClientForInvocationService {
+    getInvocationService(): InvocationService;
+
+    getConnectionManager(): ClientConnectionManager;
+
+    getPartitionService(): PartitionService;
+
+    getLoggingService(): LoggingService;
+
+    getConfig(): ClientConfig;
+
+    getListenerService(): ListenerService;
+
+    getErrorFactory(): ClientErrorFactory;
+
+    getLifecycleService(): LifecycleService;
+}
+
+export interface ClientForInvocation {
+    getInvocationService(): InvocationService;
+}
+
 /**
  * A request to be sent to a hazelcast node.
  * @internal
  */
 export class Invocation {
 
-    client: HazelcastClient;
+    client: ClientForInvocation;
 
     invocationService: InvocationService;
 
@@ -129,7 +155,7 @@ export class Invocation {
      */
     urgent = false;
 
-    constructor(client: HazelcastClient, request: ClientMessage, timeoutMillis?: number) {
+    constructor(client: ClientForInvocation, request: ClientMessage, timeoutMillis?: number) {
         this.client = client;
         this.invocationService = client.getInvocationService();
         this.deadline = timeoutMillis === undefined
@@ -147,7 +173,7 @@ export class Invocation {
 
     shouldRetry(err: Error): boolean {
         if (this.connection != null
-                && (err instanceof IOError || err instanceof TargetDisconnectedError)) {
+            && (err instanceof IOError || err instanceof TargetDisconnectedError)) {
             return false;
         }
 
@@ -159,8 +185,8 @@ export class Invocation {
         }
 
         if (err instanceof IOError
-                || err instanceof HazelcastInstanceNotActiveError
-                || err instanceof RetryableHazelcastError) {
+            || err instanceof HazelcastInstanceNotActiveError
+            || err instanceof RetryableHazelcastError) {
             return true;
         }
 
@@ -248,7 +274,7 @@ export class InvocationService {
     private readonly doInvoke: (invocation: Invocation) => void;
     private readonly eventHandlers: Map<number, Invocation> = new Map();
     private readonly pending: Map<number, Invocation> = new Map();
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForInvocationService;
     readonly invocationRetryPauseMillis: number;
     readonly invocationTimeoutMillis: number;
     readonly shouldFailOnIndeterminateState: boolean;
@@ -263,7 +289,7 @@ export class InvocationService {
     private cleanResourcesTask: Task;
     private isShutdown: boolean;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForInvocationService) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.partitionService = client.getPartitionService() as PartitionServiceImpl;
@@ -294,9 +320,10 @@ export class InvocationService {
         if (this.backupAckToClientEnabled) {
             const listenerService = this.client.getListenerService();
             return listenerService.registerListener(
-                    backupListenerCodec,
-                    this.backupEventHandler.bind(this)
-                ).then(() => {});
+                backupListenerCodec,
+                this.backupEventHandler.bind(this)
+            ).then(() => {
+            });
         }
         return Promise.resolve();
     }

@@ -15,12 +15,20 @@
  */
 /** @ignore *//** */
 
-import {HazelcastClient} from '../../HazelcastClient';
 import {ClientMessage} from '../../protocol/ClientMessage';
 import {RaftGroupId} from './RaftGroupId';
 import {CPGroupDestroyCPObjectCodec} from '../../codec/CPGroupDestroyCPObjectCodec';
 import {UnsupportedOperationError} from '../../core';
-import {Data} from '../../serialization/Data';
+import {Data} from '../../serialization';
+import {SerializationService} from "../../serialization/SerializationService";
+import {InvocationService} from "../../invocation/InvocationService";
+
+
+export interface ClientForBaseCPProxy {
+    getSerializationService(): SerializationService;
+
+    getInvocationService(): InvocationService;
+}
 
 /**
  * Common super class for any CP Subsystem proxy.
@@ -28,13 +36,13 @@ import {Data} from '../../serialization/Data';
  */
 export abstract class BaseCPProxy {
 
-    protected client: HazelcastClient;
+    protected client: ClientForBaseCPProxy;
     protected readonly proxyName: string;
     protected readonly serviceName: string;
     protected readonly groupId: RaftGroupId;
     protected readonly objectName: string;
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForBaseCPProxy,
                 serviceName: string,
                 groupId: RaftGroupId,
                 proxyName: string,

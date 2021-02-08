@@ -15,7 +15,6 @@
  */
 /** @ignore *//** */
 
-import {HazelcastClient} from '../../HazelcastClient';
 import {BaseCPProxy} from './BaseCPProxy';
 import {IAtomicReference} from '../IAtomicReference';
 import {CPProxyManager} from './CPProxyManager';
@@ -24,11 +23,17 @@ import {AtomicRefCompareAndSetCodec} from '../../codec/AtomicRefCompareAndSetCod
 import {AtomicRefGetCodec} from '../../codec/AtomicRefGetCodec';
 import {AtomicRefSetCodec} from '../../codec/AtomicRefSetCodec';
 import {AtomicRefContainsCodec} from '../../codec/AtomicRefContainsCodec';
+import {ClientForBaseProxy} from "../BaseProxy";
+
+interface ClientForAtomicRefProxy extends ClientForBaseProxy {
+
+}
+
 
 /** @internal */
 export class AtomicRefProxy<E> extends BaseCPProxy implements IAtomicReference<E> {
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForAtomicRefProxy,
                 groupId: RaftGroupId,
                 proxyName: string,
                 objectName: string) {
@@ -66,7 +71,8 @@ export class AtomicRefProxy<E> extends BaseCPProxy implements IAtomicReference<E
             this.objectName,
             newData,
             false
-        ).then(() => {});
+        ).then(() => {
+        });
     }
 
     getAndSet(newValue: E): Promise<E> {

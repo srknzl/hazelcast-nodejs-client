@@ -16,7 +16,6 @@
 /** @ignore *//** */
 
 import * as Long from 'long';
-import {HazelcastClient} from '../../HazelcastClient';
 import {BaseCPProxy} from './BaseCPProxy';
 import {IAtomicLong} from '../IAtomicLong';
 import {CPProxyManager} from './CPProxyManager';
@@ -27,11 +26,16 @@ import {AtomicLongCompareAndSetCodec} from '../../codec/AtomicLongCompareAndSetC
 import {AtomicLongGetCodec} from '../../codec/AtomicLongGetCodec';
 import {AtomicLongGetAndAddCodec} from '../../codec/AtomicLongGetAndAddCodec';
 import {AtomicLongGetAndSetCodec} from '../../codec/AtomicLongGetAndSetCodec';
+import {ClientForBaseProxy} from "../BaseProxy";
+
+export interface ClientForAtomicLongProxy extends ClientForBaseProxy {
+
+}
 
 /** @internal */
 export class AtomicLongProxy extends BaseCPProxy implements IAtomicLong {
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForAtomicLongProxy,
                 groupId: RaftGroupId,
                 proxyName: string,
                 objectName: string) {
@@ -100,6 +104,7 @@ export class AtomicLongProxy extends BaseCPProxy implements IAtomicLong {
     }
 
     set(newValue: Long | number): Promise<void> {
-        return this.getAndSet(newValue).then(() => {});
+        return this.getAndSet(newValue).then(() => {
+        });
     }
 }

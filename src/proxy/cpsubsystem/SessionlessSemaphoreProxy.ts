@@ -16,10 +16,9 @@
 /** @ignore *//** */
 
 import * as Long from 'long';
-import {HazelcastClient} from '../../HazelcastClient';
-import {BaseCPProxy} from './BaseCPProxy';
+import {BaseCPProxy, ClientForBaseCPProxy} from './BaseCPProxy';
 import {ISemaphore} from '../ISemaphore';
-import {CPSubsystemImpl} from '../../CPSubsystem';
+import {CPSubsystem, CPSubsystemImpl} from '../../CPSubsystem';
 import {CPProxyManager} from './CPProxyManager';
 import {CPSessionManager, NO_SESSION_ID} from './CPSessionManager';
 import {RaftGroupId} from './RaftGroupId';
@@ -39,17 +38,22 @@ import {
     WaitKeyCancelledError
 } from '../../core';
 
+interface ClientForSessionlessSemaphoreProxy extends ClientForBaseCPProxy {
+    getCPSubsystem(): CPSubsystem;
+}
+
 /** @internal */
 export class SessionlessSemaphoreProxy extends BaseCPProxy implements ISemaphore {
 
     private readonly sessionManager: CPSessionManager;
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForSessionlessSemaphoreProxy,
                 groupId: RaftGroupId,
                 proxyName: string,
                 objectName: string) {
         super(client, CPProxyManager.SEMAPHORE_SERVICE, groupId, proxyName, objectName);
-        this.sessionManager = (client.getCPSubsystem() as CPSubsystemImpl).getCPSessionManager();
+        this.sessionManager = ((client as ClientForSessionlessSemaphoreProxy).getCPSubsystem() as CPSubsystemImpl).
+        getCPSessionManager();
     }
 
     init(permits: number): Promise<boolean> {
@@ -61,7 +65,8 @@ export class SessionlessSemaphoreProxy extends BaseCPProxy implements ISemaphore
     acquire(permits = 1): Promise<void> {
         assertPositiveNumber(permits);
 
-        return this.doTryAcquire(permits, -1).then(() => {});
+        return this.doTryAcquire(permits, -1).then(() => {
+        });
     }
 
     tryAcquire(permits = 1, timeout = 0): Promise<boolean> {
@@ -112,7 +117,8 @@ export class SessionlessSemaphoreProxy extends BaseCPProxy implements ISemaphore
                     permits
                 )
             )
-            .then(() => {});
+            .then(() => {
+            });
     }
 
     availablePermits(): Promise<number> {
@@ -166,7 +172,8 @@ export class SessionlessSemaphoreProxy extends BaseCPProxy implements ISemaphore
                     delta
                 )
             )
-            .then(() => {});
+            .then(() => {
+            });
     }
 
     private getClusterWideThreadId(): Promise<Long> {

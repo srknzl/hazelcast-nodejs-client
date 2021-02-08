@@ -17,7 +17,6 @@
 
 import * as Long from 'long';
 import {RaftGroupId} from './RaftGroupId';
-import {HazelcastClient} from '../../HazelcastClient';
 import {
     IllegalStateError,
     SessionExpiredError,
@@ -36,6 +35,8 @@ import {
     cancelRepetitionTask,
     Task
 } from '../../util/Util';
+import {LoggingService} from "../../logging/LoggingService";
+import {InvocationService} from "../../invocation/InvocationService";
 
 /** @internal */
 export class SessionState {
@@ -82,17 +83,25 @@ export class SessionState {
 /** @internal */
 export const NO_SESSION_ID = Long.fromNumber(-1);
 
+export interface ClientForCPSessionManager {
+    getLoggingService(): LoggingService;
+
+    getInvocationService(): InvocationService;
+
+    getName(): string;
+}
+
 /** @internal */
 export class CPSessionManager {
 
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForCPSessionManager;
     private readonly logger: ILogger;
     // <group_id, session_state> map
     private readonly sessions: Map<string, SessionState> = new Map();
     private heartbeatTask: Task;
     private isShutdown = false;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForCPSessionManager) {
         this.client = client;
         this.logger = this.client.getLoggingService().getLogger();
     }
@@ -184,7 +193,8 @@ export class CPSessionManager {
     private requestHeartbeat(groupId: RaftGroupId, sessionId: Long): Promise<void> {
         const clientMessage = CPSessionHeartbeatSessionCodec.encodeRequest(groupId, sessionId);
         return this.client.getInvocationService().invokeOnRandomTarget(clientMessage)
-            .then(() => {});
+            .then(() => {
+            });
     }
 
     private requestGenerateThreadId(groupId: RaftGroupId): Promise<Long> {

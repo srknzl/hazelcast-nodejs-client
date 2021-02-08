@@ -17,7 +17,6 @@
 
 import * as Long from 'long';
 import {OverflowPolicy} from '../OverflowPolicy';
-import {HazelcastClient} from '../../HazelcastClient';
 import {TopicOverloadError} from '../../core';
 import {AddressImpl} from '../../core/Address';
 import {SerializationService} from '../../serialization/SerializationService';
@@ -26,14 +25,24 @@ import {
     deferredPromise,
     DeferredPromise
 } from '../../util/Util';
-import {BaseProxy} from '../BaseProxy';
+import {BaseProxy, ClientForBaseProxy} from '../BaseProxy';
 import {Ringbuffer} from '../Ringbuffer';
 import {ITopic} from '../ITopic';
 import {ReliableTopicMessage} from './ReliableTopicMessage';
 import {ReliableTopicListenerRunner} from './ReliableTopicListenerRunner';
 import {MessageListener} from '../MessageListener';
 import {TopicOverloadPolicy} from '../TopicOverloadPolicy';
-import {ClientConfigImpl} from '../../config/Config';
+import {ClientConfig, ClientConfigImpl} from '../../config/Config';
+import {ClusterService} from "../../invocation/ClusterService";
+import {LoggingService} from "../../logging/LoggingService";
+
+interface ClientForReliableTopicProxy extends ClientForBaseProxy {
+    getClusterService(): ClusterService;
+
+    getConfig(): ClientConfig;
+
+    getLoggingService(): LoggingService;
+}
 
 /** @internal */
 export const TOPIC_INITIAL_BACKOFF = 100;
@@ -49,10 +58,11 @@ export class ReliableTopicProxy<E> extends BaseProxy implements ITopic<E> {
     private readonly serializationService: SerializationService;
     private readonly overloadPolicy: TopicOverloadPolicy;
 
-    constructor(client: HazelcastClient, serviceName: string, name: string) {
+    constructor(client: ClientForBaseProxy, serviceName: string, name: string) {
         super(client, serviceName, name);
-        this.localAddress = client.getClusterService().getLocalClient().localAddress as AddressImpl;
-        const config = (client.getConfig() as ClientConfigImpl).getReliableTopicConfig(name);
+        this.localAddress = (client as ClientForReliableTopicProxy)
+            .getClusterService().getLocalClient().localAddress as AddressImpl;
+        const config = ((client as ClientForReliableTopicProxy).getConfig() as ClientConfigImpl).getReliableTopicConfig(name);
         this.batchSize = config.readBatchSize;
         this.overloadPolicy = config.overloadPolicy;
         this.serializationService = client.getSerializationService();
@@ -64,7 +74,7 @@ export class ReliableTopicProxy<E> extends BaseProxy implements ITopic<E> {
 
     addMessageListener(listener: MessageListener<E>): string {
         const listenerId = UuidUtil.generate().toString();
-        const logger = this.client.getLoggingService().getLogger();
+        const logger = (this.client as ClientForReliableTopicProxy).getLoggingService().getLogger();
         const runner = new ReliableTopicListenerRunner(listenerId, listener, this.ringbuffer,
             this.batchSize, this.serializationService, logger, this);
 

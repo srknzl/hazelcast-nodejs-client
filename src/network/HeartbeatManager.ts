@@ -16,16 +16,23 @@
 /** @ignore *//** */
 
 import {ClientPingCodec} from '../codec/ClientPingCodec';
-import {HazelcastClient} from '../HazelcastClient';
 import {ClientConnection} from './ClientConnection';
 import {ILogger} from '../logging/ILogger';
 import {ClientConnectionManager} from './ClientConnectionManager';
 import {cancelRepetitionTask, scheduleWithRepetition, Task} from '../util/Util';
 import {TargetDisconnectedError} from '../core';
-import {Invocation} from '../invocation/InvocationService';
+import {Invocation, InvocationService} from '../invocation/InvocationService';
+import {LoggingService} from "../logging/LoggingService";
+import {ClientConfig} from "../config";
 
 const PROPERTY_HEARTBEAT_INTERVAL = 'hazelcast.client.heartbeat.interval';
 const PROPERTY_HEARTBEAT_TIMEOUT = 'hazelcast.client.heartbeat.timeout';
+
+interface ClientForHeartbeatManager {
+    getLoggingService(): LoggingService;
+    getConfig(): ClientConfig;
+    getInvocationService(): InvocationService;
+}
 
 /**
  * HeartbeatManager manager used by connection manager.
@@ -33,14 +40,14 @@ const PROPERTY_HEARTBEAT_TIMEOUT = 'hazelcast.client.heartbeat.timeout';
  */
 export class HeartbeatManager {
 
-    private client: HazelcastClient;
+    private client: ClientForHeartbeatManager;
     private connectionManager: ClientConnectionManager;
     private readonly heartbeatTimeout: number;
     private readonly heartbeatInterval: number;
     private logger: ILogger;
     private task: Task;
 
-    constructor(client: HazelcastClient, connectionManager: ClientConnectionManager) {
+    constructor(client: ClientForHeartbeatManager, connectionManager: ClientConnectionManager) {
         this.client = client;
         this.connectionManager = connectionManager;
         this.logger = this.client.getLoggingService().getLogger();

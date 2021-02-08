@@ -41,7 +41,7 @@ import {MultiMapRemoveEntryListenerCodec} from '../codec/MultiMapRemoveEntryList
 import {MultiMapSizeCodec} from '../codec/MultiMapSizeCodec';
 import {MultiMapValueCountCodec} from '../codec/MultiMapValueCountCodec';
 import {MultiMapValuesCodec} from '../codec/MultiMapValuesCodec';
-import {BaseProxy} from './BaseProxy';
+import {BaseProxy, ClientForBaseProxy} from './BaseProxy';
 import {MultiMap} from './MultiMap';
 import {MapEvent} from './MapListener';
 import {ClientMessage} from '../protocol/ClientMessage';
@@ -51,11 +51,22 @@ import {
 } from '../core';
 import * as SerializationUtil from '../serialization/SerializationUtil';
 import {MultiMapPutAllCodec} from '../codec/MultiMapPutAllCodec';
+import {ListenerService} from "../listener/ListenerService";
+import {LockReferenceIdGenerator} from "./LockReferenceIdGenerator";
+import {ClusterService} from "../invocation/ClusterService";
+
+interface ClientForMultiMapProxy extends ClientForBaseProxy {
+    getListenerService(): ListenerService;
+
+    getLockReferenceIdGenerator(): LockReferenceIdGenerator;
+
+    getClusterService(): ClusterService;
+}
 
 /** @internal */
 export class MultiMapProxy<K, V> extends BaseProxy implements MultiMap<K, V> {
 
-    private lockReferenceIdGenerator = this.client.getLockReferenceIdGenerator();
+    private lockReferenceIdGenerator = (this.client as ClientForMultiMapProxy).getLockReferenceIdGenerator();
     private deserializeList = <X>(items: Data[]): X[] => {
         return items.map<X>(this.toObject.bind(this));
     };
@@ -141,7 +152,8 @@ export class MultiMapProxy<K, V> extends BaseProxy implements MultiMap<K, V> {
     }
 
     clear(): Promise<void> {
-        return this.encodeInvokeOnRandomTarget(MultiMapClearCodec).then(() => {});
+        return this.encodeInvokeOnRandomTarget(MultiMapClearCodec).then(() => {
+        });
     }
 
     valueCount(key: K): Promise<number> {
@@ -160,7 +172,7 @@ export class MultiMapProxy<K, V> extends BaseProxy implements MultiMap<K, V> {
                                    eventType: number,
                                    uuid: UUID,
                                    numberOfAffectedEntries: number): void => {
-            const member = this.client.getClusterService().getMember(uuid);
+            const member = (this.client as ClientForMultiMapProxy).getClusterService().getMember(uuid);
             const name = this.name;
 
             key = toObject(keyData);
@@ -199,26 +211,27 @@ export class MultiMapProxy<K, V> extends BaseProxy implements MultiMap<K, V> {
             };
             const codec = this.createEntryListenerToKey(this.name, keyData, includeValue);
 
-            return this.client.getListenerService().registerListener(codec, handler);
+            return (this.client as ClientForMultiMapProxy).getListenerService().registerListener(codec, handler);
         } else {
             const listenerHandler = (m: ClientMessage): void => {
                 MultiMapAddEntryListenerCodec.handle(m, entryEventHandler);
             };
             const codec = this.createEntryListener(this.name, includeValue);
 
-            return this.client.getListenerService().registerListener(codec, listenerHandler);
+            return (this.client as ClientForMultiMapProxy).getListenerService().registerListener(codec, listenerHandler);
         }
     }
 
     removeEntryListener(listenerId: string): Promise<boolean> {
-        return this.client.getListenerService().deregisterListener(listenerId);
+        return (this.client as ClientForMultiMapProxy).getListenerService().deregisterListener(listenerId);
     }
 
     lock(key: K, leaseMillis = -1): Promise<void> {
         const keyData = this.toData(key);
         return this.encodeInvokeOnKey(
             MultiMapLockCodec, keyData, keyData, 1, leaseMillis, this.nextSequence()
-        ).then(() => {});
+        ).then(() => {
+        });
     }
 
     isLocked(key: K): Promise<boolean> {
@@ -230,20 +243,22 @@ export class MultiMapProxy<K, V> extends BaseProxy implements MultiMap<K, V> {
     tryLock(key: K, timeoutMillis = 0, leaseMillis = -1): Promise<boolean> {
         const keyData = this.toData(key);
         return this.encodeInvokeOnKey(
-            MultiMapTryLockCodec, keyData, keyData, 1, leaseMillis,timeoutMillis, this.nextSequence()
+            MultiMapTryLockCodec, keyData, keyData, 1, leaseMillis, timeoutMillis, this.nextSequence()
         ).then(MultiMapTryLockCodec.decodeResponse);
     }
 
     unlock(key: K): Promise<void> {
         const keyData = this.toData(key);
         return this.encodeInvokeOnKey(MultiMapUnlockCodec, keyData, keyData, 1, this.nextSequence())
-            .then(() => {});
+            .then(() => {
+            });
     }
 
     forceUnlock(key: K): Promise<void> {
         const keyData = this.toData(key);
         return this.encodeInvokeOnKey(MultiMapForceUnlockCodec, keyData, keyData, this.nextSequence())
-            .then(() => {});
+            .then(() => {
+            });
     }
 
     putAll(pairs: Array<[K, V[]]>): Promise<void> {
@@ -273,10 +288,11 @@ export class MultiMapProxy<K, V> extends BaseProxy implements MultiMap<K, V> {
 
         const partitionPromises: Array<Promise<ClientMessage>> = [];
         partitionToDataPairs.forEach((pair, partitionId) => {
-           partitionPromises.push(this.encodeInvokeOnPartition(MultiMapPutAllCodec, partitionId, pair));
+            partitionPromises.push(this.encodeInvokeOnPartition(MultiMapPutAllCodec, partitionId, pair));
         });
 
-        return Promise.all(partitionPromises).then(() => {});
+        return Promise.all(partitionPromises).then(() => {
+        });
     }
 
     private nextSequence(): Long {

@@ -15,7 +15,6 @@
  */
 /** @ignore *//** */
 
-import {HazelcastClient} from '../HazelcastClient';
 import {
     ClientNotActiveError,
     HazelcastError,
@@ -24,25 +23,40 @@ import {
 } from '../core';
 import {ClientConnection} from '../network/ClientConnection';
 import {ClientEventRegistration} from '../invocation/ClientEventRegistration';
-import {Invocation} from '../invocation/InvocationService';
+import {Invocation, InvocationService} from '../invocation/InvocationService';
 import {RegistrationKey} from '../invocation/RegistrationKey';
 import {ClientMessageHandler} from '../protocol/ClientMessage';
 import {ListenerMessageCodec} from './ListenerMessageCodec';
 import {deferredPromise} from '../util/Util';
 import {UuidUtil} from '../util/UuidUtil';
-import {ILogger} from '../logging/ILogger';
+import {ILogger} from '../logging';
+import {LoggingService} from "../logging/LoggingService";
+import {ClientConfig} from "../config";
+import {ClientConnectionManager} from "../network/ClientConnectionManager";
+import {ClientForInvocation} from "../invocation/InvocationService";
+
+interface ClientForListenerService extends ClientForInvocation {
+    getLoggingService(): LoggingService;
+
+    getConfig(): ClientConfig;
+
+    getConnectionManager(): ClientConnectionManager,
+
+    getInvocationService(): InvocationService;
+}
+
 
 /** @internal */
 export class ListenerService {
 
-    private client: HazelcastClient;
+    private client: ClientForListenerService;
     private logger: ILogger;
     private isSmartService: boolean;
 
     private activeRegistrations: Map<string, Map<ClientConnection, ClientEventRegistration>>;
     private userKeyInformation: Map<string, RegistrationKey>;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForListenerService) {
         this.client = client;
         this.logger = this.client.getLoggingService().getLogger();
         this.isSmartService = this.client.getConfig().network.smartRouting;
@@ -209,13 +223,13 @@ export class ListenerService {
         invocation.connection = eventRegistration.subscriber;
         this.client.getInvocationService().invoke(invocation).catch((err) => {
             if (err instanceof ClientNotActiveError
-                    || err instanceof IOError
-                    || err instanceof TargetDisconnectedError) {
+                || err instanceof IOError
+                || err instanceof TargetDisconnectedError) {
                 return;
             }
             this.logger.warn('ListenerService',
                 'Deregistration of listener ' + userKey + ' has failed for address '
-                    + invocation.connection.getRemoteAddress().toString());
+                + invocation.connection.getRemoteAddress().toString());
         });
     }
 

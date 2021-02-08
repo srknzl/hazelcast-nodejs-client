@@ -16,7 +16,6 @@
 /** @ignore *//** */
 
 import {EventEmitter} from 'events';
-import {HazelcastClient} from '../HazelcastClient';
 import {
     CandidateClusterContext,
     ClusterFailoverService
@@ -56,8 +55,8 @@ import {HeartbeatManager} from './HeartbeatManager';
 import {UuidUtil} from '../util/UuidUtil';
 import {WaitStrategy} from './WaitStrategy';
 import {ReconnectMode} from '../config/ConnectionStrategyConfig';
-import {ClientConfigImpl} from '../config/Config';
-import {LifecycleState, LifecycleServiceImpl} from '../LifecycleService';
+import {ClientConfig, ClientConfigImpl} from '../config/Config';
+import {LifecycleState, LifecycleServiceImpl, LifecycleService} from '../LifecycleService';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {BuildInfo} from '../BuildInfo';
 import {ClientAuthenticationCustomCodec} from '../codec/ClientAuthenticationCustomCodec';
@@ -66,9 +65,14 @@ import {
     ClientAuthenticationResponseParams
 } from '../codec/ClientAuthenticationCodec';
 import {AuthenticationStatus} from '../protocol/AuthenticationStatus';
-import {Invocation} from '../invocation/InvocationService';
-import {PartitionServiceImpl} from '../PartitionService';
+import {Invocation, InvocationService} from '../invocation/InvocationService';
+import {PartitionService, PartitionServiceImpl} from '../PartitionService';
 import {AddressProvider} from '../connection/AddressProvider';
+import {LoggingService} from "../logging/LoggingService";
+import {ClientFailoverConfig} from "../config";
+import {ClusterService} from "../invocation/ClusterService";
+import {SerializationService} from "../serialization/SerializationService";
+import {ClientForClientConnection} from "../network/ClientConnection";
 
 const CONNECTION_REMOVED_EVENT_NAME = 'connectionRemoved';
 const CONNECTION_ADDED_EVENT_NAME = 'connectionAdded';
@@ -106,6 +110,36 @@ enum ClientState {
     INITIALIZED_ON_CLUSTER = 2,
 }
 
+interface ClientForClientConnectionManager extends ClientForClientConnection {
+    getLoadBalancer(): LoadBalancer;
+
+    getConfig(): ClientConfig;
+
+    getLoggingService(): LoggingService;
+
+    getClusterFailoverService(): ClusterFailoverService;
+
+    getFailoverConfig(): ClientFailoverConfig;
+
+    getClusterService(): ClusterService;
+
+    onClusterChange(): void;
+
+    getLifecycleService(): LifecycleService;
+
+    getInvocationService(): InvocationService;
+
+    getSerializationService(): SerializationService;
+
+    getName(): string;
+
+    sendStateToCluster(): Promise<void>;
+
+    onClusterRestart(): void;
+
+    getPartitionService(): PartitionService;
+}
+
 /**
  * Maintains connections between the client and members of the cluster.
  * @internal
@@ -116,7 +150,7 @@ export class ClientConnectionManager extends EventEmitter {
     private alive = false;
 
     private readonly logger: ILogger;
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForClientConnectionManager;
     private readonly labels: string[];
     private readonly shuffleMemberList: boolean;
     private readonly asyncStart: boolean;
@@ -140,7 +174,7 @@ export class ClientConnectionManager extends EventEmitter {
     // contains member UUIDs (strings) for members with in-flight connection attempt
     private connectingMembers = new Set<string>();
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForClientConnectionManager) {
         super();
         this.client = client;
         this.loadBalancer = client.getLoadBalancer();
@@ -470,10 +504,10 @@ export class ClientConnectionManager extends EventEmitter {
 
         // try to connect to a member in the member list first
         return this.tryConnecting(
-                0, members, triedAddressesPerAttempt,
-                (m) => m.address,
-                (m) => this.getOrConnectToMember(m)
-            )
+            0, members, triedAddressesPerAttempt,
+            (m) => m.address,
+            (m) => this.getOrConnectToMember(m)
+        )
             .then((connected) => {
                 if (connected) {
                     return true;
@@ -516,7 +550,7 @@ export class ClientConnectionManager extends EventEmitter {
             })
             .catch((err: Error) => {
                 if (err instanceof ClientNotAllowedInClusterError
-                        || err instanceof InvalidConfigurationError) {
+                    || err instanceof InvalidConfigurationError) {
                     this.logger.warn('ConnectionManager', 'Stopped trying on the cluster: '
                         + ctx.clusterName + ' reason: ' + err.message);
                     return false;
@@ -558,7 +592,7 @@ export class ClientConnectionManager extends EventEmitter {
                 this.logger.warn('ConnectionManager', 'Error during initial connection to '
                     + target.toString() + ' ' + err);
                 if (err instanceof InvalidConfigurationError
-                        || err instanceof ClientNotAllowedInClusterError) {
+                    || err instanceof ClientNotAllowedInClusterError) {
                     throw err;
                 }
                 return null;
@@ -620,7 +654,7 @@ export class ClientConnectionManager extends EventEmitter {
                 const opts = this.client.getConfig().network.ssl.sslOptions;
                 return this.connectTLSSocket(translatedAddress, opts);
             } else if (this.client.getConfig().network.ssl.sslOptionsFactory
-                       || this.client.getConfig().network.ssl.sslOptionsFactoryProperties) {
+                || this.client.getConfig().network.ssl.sslOptionsFactoryProperties) {
                 const factoryProperties = this.client.getConfig().network.ssl.sslOptionsFactoryProperties;
                 let factory = this.client.getConfig().network.ssl.sslOptionsFactory;
                 if (factory == null) {

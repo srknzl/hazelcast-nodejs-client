@@ -16,11 +16,15 @@
 /** @ignore *//** */
 
 import * as Long from 'long';
-import {HazelcastClient} from '../../HazelcastClient';
 import {RaftGroupId} from './RaftGroupId';
-import {BaseCPProxy} from './BaseCPProxy';
-import {CPSubsystemImpl} from '../../CPSubsystem';
+import {BaseCPProxy, ClientForBaseCPProxy} from './BaseCPProxy';
+import {CPSubsystem, CPSubsystemImpl} from '../../CPSubsystem';
 import {CPSessionManager} from './CPSessionManager';
+
+
+export interface ClientForCPSessionAwareProxy extends ClientForBaseCPProxy {
+    getCPSubsystem(): CPSubsystem;
+}
 
 /**
  * Common super class for CP Subsystem proxies that make use of Raft sessions.
@@ -31,7 +35,7 @@ export abstract class CPSessionAwareProxy extends BaseCPProxy {
     protected readonly sessionManager: CPSessionManager;
     private threadIdSeq = 0;
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForCPSessionAwareProxy,
                 serviceName: string,
                 groupId: RaftGroupId,
                 proxyName: string,

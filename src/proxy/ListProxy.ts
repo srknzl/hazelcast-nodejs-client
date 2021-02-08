@@ -46,6 +46,15 @@ import {
     ReadOnlyLazyList,
     UUID
 } from '../core';
+import {ClusterService} from "../invocation/ClusterService";
+import {ListenerService} from "../listener/ListenerService";
+import {ClientForSetProxy} from "./SetProxy";
+
+export interface ClientForListProxy extends ClientForSetProxy {
+    getClusterService(): ClusterService;
+
+    getListenerService(): ListenerService;
+}
 
 /** @internal */
 export class ListProxy<E> extends PartitionSpecificProxy implements IList<E> {
@@ -67,11 +76,13 @@ export class ListProxy<E> extends PartitionSpecificProxy implements IList<E> {
 
     addAt(index: number, element: E): Promise<void> {
         return this.encodeInvoke(ListAddWithIndexCodec, index, this.toData(element))
-            .then(() => {});
+            .then(() => {
+            });
     }
 
     clear(): Promise<void> {
-        return this.encodeInvoke(ListClearCodec).then(() => {});
+        return this.encodeInvoke(ListClearCodec).then(() => {
+        });
     }
 
     contains(entry: E): Promise<boolean> {
@@ -164,7 +175,7 @@ export class ListProxy<E> extends PartitionSpecificProxy implements IList<E> {
             ListAddListenerCodec.handle(message, (element: Data, uuid: UUID, eventType: number) => {
                 const responseObject = element ? this.toObject(element) : null;
 
-                const member = this.client.getClusterService().getMember(uuid);
+                const member = (this.client as ClientForListProxy).getClusterService().getMember(uuid);
                 const name = this.name;
                 const itemEvent = new ItemEvent(name, eventType, responseObject, member);
 
@@ -176,11 +187,11 @@ export class ListProxy<E> extends PartitionSpecificProxy implements IList<E> {
             });
         };
         const codec = this.createItemListener(this.name, includeValue);
-        return this.client.getListenerService().registerListener(codec, listenerHandler);
+        return (this.client as ClientForListProxy).getListenerService().registerListener(codec, listenerHandler);
     }
 
     removeItemListener(registrationId: string): Promise<boolean> {
-        return this.client.getListenerService().deregisterListener(registrationId);
+        return (this.client as ClientForListProxy).getListenerService().deregisterListener(registrationId);
     }
 
     private serializeList(input: E[]): Data[] {

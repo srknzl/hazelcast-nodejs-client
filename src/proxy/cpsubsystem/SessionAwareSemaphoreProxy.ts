@@ -16,8 +16,7 @@
 /** @ignore *//** */
 
 import * as Long from 'long';
-import {HazelcastClient} from '../../HazelcastClient';
-import {CPSessionAwareProxy} from './CPSessionAwareProxy';
+import {ClientForCPSessionAwareProxy, CPSessionAwareProxy} from './CPSessionAwareProxy';
 import {ISemaphore} from '../ISemaphore';
 import {CPProxyManager} from './CPProxyManager';
 import {NO_SESSION_ID} from './CPSessionManager';
@@ -40,6 +39,11 @@ import {
     UUID
 } from '../../core';
 
+
+interface ClientForSessionAwareSemaphoreProxy extends ClientForCPSessionAwareProxy {
+
+}
+
 /**
  * Since a proxy does not know how many permits will be drained on
  * the Raft group, it uses this constant to increment its local session
@@ -51,7 +55,7 @@ const DRAIN_SESSION_ACQ_COUNT = 1024;
 /** @internal */
 export class SessionAwareSemaphoreProxy extends CPSessionAwareProxy implements ISemaphore {
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForSessionAwareSemaphoreProxy,
                 groupId: RaftGroupId,
                 proxyName: string,
                 objectName: string) {
@@ -91,7 +95,8 @@ export class SessionAwareSemaphoreProxy extends CPSessionAwareProxy implements I
                 }
                 throw err;
             })
-            .then(() => {});
+            .then(() => {
+            });
     }
 
     tryAcquire(permits = 1, timeout = 0): Promise<boolean> {
@@ -257,7 +262,8 @@ export class SessionAwareSemaphoreProxy extends CPSessionAwareProxy implements I
             threadId,
             invocationUid,
             permits
-        ).then(() => {});
+        ).then(() => {
+        });
     }
 
     private requestDrain(sessionId: Long,
@@ -285,7 +291,8 @@ export class SessionAwareSemaphoreProxy extends CPSessionAwareProxy implements I
             threadId,
             invocationUid,
             delta
-        ).then(() => {});
+        ).then(() => {
+        });
     }
 
     private newIllegalStateError(cause?: SessionExpiredError) {

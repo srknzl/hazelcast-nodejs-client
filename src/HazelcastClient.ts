@@ -189,7 +189,7 @@ export class HazelcastClient {
     /**
      * Gathers information of this local client.
      */
-     getLocalEndpoint(): ClientInfo {
+    getLocalEndpoint(): ClientInfo {
         return this.clusterService.getLocalClient();
     }
 

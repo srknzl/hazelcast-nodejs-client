@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-import {HazelcastClient} from './HazelcastClient';
 import {ILogger} from './logging/ILogger';
 import {ClientConnection} from './network/ClientConnection';
 import {ClientOfflineError, UUID} from './core';
+import {LoggingService} from "./logging/LoggingService";
+import {SerializationService} from "./serialization/SerializationService";
 
 /**
  * Partition service for Hazelcast clients. Allows to retrieve information
@@ -53,6 +54,12 @@ export interface PartitionService {
 
 }
 
+interface ClientForPartitionService {
+    getLoggingService(): LoggingService;
+
+    getSerializationService(): SerializationService;
+}
+
 class PartitionTable {
     connection: ClientConnection;
     partitionStateVersion = -1;
@@ -62,12 +69,12 @@ class PartitionTable {
 /** @internal */
 export class PartitionServiceImpl implements PartitionService {
 
-    private client: HazelcastClient;
+    private client: ClientForPartitionService;
     private partitionTable = new PartitionTable();
     private partitionCount = 0;
     private logger: ILogger;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForPartitionService) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger();
     }

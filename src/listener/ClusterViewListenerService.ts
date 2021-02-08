@@ -15,16 +15,29 @@
  */
 /** @ignore *//** */
 
-import {HazelcastClient} from '../HazelcastClient';
 import {ClientConnectionManager} from '../network/ClientConnectionManager';
-import {PartitionServiceImpl} from '../PartitionService';
+import {PartitionService, PartitionServiceImpl} from '../PartitionService';
 import {ClusterService} from '../invocation/ClusterService';
 import {ILogger} from '../logging/ILogger';
 import {ClientConnection} from '../network/ClientConnection';
 import {ClientAddClusterViewListenerCodec} from '../codec/ClientAddClusterViewListenerCodec';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {UUID} from '../core/UUID';
-import {Invocation} from '../invocation/InvocationService';
+import {Invocation, InvocationService} from '../invocation/InvocationService';
+import {LoggingService} from "../logging/LoggingService";
+
+
+interface ClientForClusterViewListenerService {
+    getLoggingService(): LoggingService;
+
+    getPartitionService(): PartitionService;
+
+    getConnectionManager(): ClientConnectionManager;
+
+    getClusterService(): ClusterService;
+
+    getInvocationService(): InvocationService;
+}
 
 /**
  * Adds cluster listener to one of the connections. If that connection is removed,
@@ -33,14 +46,14 @@ import {Invocation} from '../invocation/InvocationService';
  */
 export class ClusterViewListenerService {
 
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForClusterViewListenerService;
     private readonly clusterService: ClusterService;
     private readonly connectionManager: ClientConnectionManager;
     private readonly partitionService: PartitionServiceImpl;
     private readonly logger: ILogger;
     private listenerAddedConnection: ClientConnection;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForClusterViewListenerService) {
         this.client = client;
         this.logger = client.getLoggingService().getLogger();
         this.connectionManager = client.getConnectionManager();

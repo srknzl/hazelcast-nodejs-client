@@ -17,8 +17,7 @@
 
 import * as assert from 'assert';
 import * as Long from 'long';
-import {HazelcastClient} from '../../HazelcastClient';
-import {CPSessionAwareProxy} from './CPSessionAwareProxy';
+import {ClientForCPSessionAwareProxy, CPSessionAwareProxy} from './CPSessionAwareProxy';
 import {FencedLock} from '../FencedLock';
 import {CPProxyManager} from './CPProxyManager';
 import {NO_SESSION_ID} from './CPSessionManager';
@@ -52,13 +51,18 @@ function isValidFence(fence: Long): boolean {
     return fence.greaterThan(INVALID_FENCE);
 }
 
+interface ClientForFencedLockProxy extends ClientForCPSessionAwareProxy {
+
+}
+
+
 /** @internal */
 export class FencedLockProxy extends CPSessionAwareProxy implements FencedLock {
 
     // "thread id" -> id of the session that has acquired the lock
     private readonly lockedSessionIds: Map<number, Long> = new Map();
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForFencedLockProxy,
                 groupId: RaftGroupId,
                 proxyName: string,
                 objectName: string) {

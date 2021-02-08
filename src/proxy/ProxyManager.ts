@@ -20,14 +20,13 @@ import {ClientCreateProxyCodec} from '../codec/ClientCreateProxyCodec';
 import {ClientDestroyProxyCodec} from '../codec/ClientDestroyProxyCodec';
 import {ClientRemoveDistributedObjectListenerCodec} from '../codec/ClientRemoveDistributedObjectListenerCodec';
 import {DistributedObject} from '../core/DistributedObject';
-import {HazelcastClient} from '../HazelcastClient';
-import {Invocation} from '../invocation/InvocationService';
+import {Invocation, InvocationService} from '../invocation/InvocationService';
 import {ListenerMessageCodec} from '../listener/ListenerMessageCodec';
 import {FlakeIdGeneratorProxy} from './flakeid/FlakeIdGeneratorProxy';
 import {ListProxy} from './ListProxy';
 import {MapProxy} from './MapProxy';
 import {MultiMapProxy} from './MultiMapProxy';
-import {NearCachedMapProxy} from './NearCachedMapProxy';
+import {ClientForNearCachedMapProxy, NearCachedMapProxy} from './NearCachedMapProxy';
 import {PNCounterProxy} from './PNCounterProxy';
 import {QueueProxy} from './QueueProxy';
 import {ReplicatedMapProxy} from './ReplicatedMapProxy';
@@ -41,11 +40,20 @@ import {UUID} from '../core/UUID';
 import {ClientCreateProxiesCodec} from '../codec/ClientCreateProxiesCodec';
 import {BaseProxy} from './BaseProxy';
 import {Ringbuffer} from './Ringbuffer';
-import {ClientConfigImpl} from '../config/Config';
+import {ClientConfig, ClientConfigImpl} from '../config/Config';
+import {ListenerService} from "../listener/ListenerService";
 
 /** @internal */
 export const NAMESPACE_SEPARATOR = '/';
 const RINGBUFFER_PREFIX = '_hz_rb_';
+
+interface ClientForProxyManager extends ClientForNearCachedMapProxy{
+    getConfig(): ClientConfig;
+
+    getInvocationService(): InvocationService;
+
+    getListenerService(): ListenerService;
+}
 
 /** @internal */
 export class ProxyManager {
@@ -64,9 +72,9 @@ export class ProxyManager {
 
     public readonly service: { [serviceName: string]: any } = {};
     private readonly proxies = new Map<string, Promise<DistributedObject>>();
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForProxyManager;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForProxyManager) {
         this.client = client;
     }
 
@@ -129,7 +137,8 @@ export class ProxyManager {
         const request = ClientCreateProxiesCodec.encodeRequest(proxyEntries);
         request.setPartitionId(-1);
         const invocation = new Invocation(this.client, request);
-        return this.client.getInvocationService().invokeUrgent(invocation).then(() => {});
+        return this.client.getInvocationService().invokeUrgent(invocation).then(() => {
+        });
     }
 
     public getDistributedObjects(): Promise<DistributedObject[]> {
@@ -145,7 +154,8 @@ export class ProxyManager {
         this.proxies.delete(serviceName + NAMESPACE_SEPARATOR + name);
         const clientMessage = ClientDestroyProxyCodec.encodeRequest(name, serviceName);
         clientMessage.setPartitionId(-1);
-        return this.client.getInvocationService().invokeOnRandomTarget(clientMessage).then(() => {});
+        return this.client.getInvocationService().invokeOnRandomTarget(clientMessage).then(() => {
+        });
     }
 
     public destroyProxyLocally(namespace: string): Promise<void> {

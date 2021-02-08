@@ -16,8 +16,7 @@
 /** @ignore *//** */
 
 import {ClientConnection} from '../network/ClientConnection';
-import {HazelcastClient} from '../HazelcastClient';
-import {ClientConfigImpl} from '../config/Config';
+import {ClientConfig, ClientConfigImpl} from '../config/Config';
 import {MemberSelector} from '../core/MemberSelector';
 import {
     assertNotNull,
@@ -42,6 +41,8 @@ import {
     TargetDisconnectedError
 } from '../core';
 import {MemberInfo} from '../core/MemberInfo';
+import {LoggingService} from "../logging/LoggingService";
+import {ClusterFailoverService} from "../ClusterFailoverService";
 
 class MemberListSnapshot {
     version: number;
@@ -58,13 +59,26 @@ class MemberListSnapshot {
 const EMPTY_SNAPSHOT = new MemberListSnapshot(-1, new Map<string, MemberImpl>(), []);
 const INITIAL_MEMBERS_TIMEOUT_IN_MILLIS = 120 * 1000; // 120 seconds
 
+
+interface ClientForClusterService {
+    getConnectionManager(): ClientConnectionManager;
+
+    getConfig(): ClientConfig;
+
+    getLoggingService(): LoggingService;
+
+    getName(): string;
+
+    getClusterFailoverService(): ClusterFailoverService;
+}
+
 /**
  * Manages the relationship of this client with the cluster.
  * @internal
  */
 export class ClusterService implements Cluster {
 
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForClusterService;
     private readonly listeners: Map<string, MembershipListener> = new Map();
     private readonly logger: ILogger;
     private readonly connectionManager: ClientConnectionManager;
@@ -73,7 +87,7 @@ export class ClusterService implements Cluster {
     private initialListFetched = deferredPromise<void>();
     private memberListSnapshot = EMPTY_SNAPSHOT;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForClusterService) {
         this.client = client;
         this.connectionManager = client.getConnectionManager();
         this.labels = new Set(client.getConfig().clientLabels);

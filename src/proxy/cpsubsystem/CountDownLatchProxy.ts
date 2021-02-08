@@ -15,8 +15,7 @@
  */
 /** @ignore *//** */
 
-import {HazelcastClient} from '../../HazelcastClient';
-import {BaseCPProxy} from './BaseCPProxy';
+import {BaseCPProxy, ClientForBaseCPProxy} from './BaseCPProxy';
 import {ICountDownLatch} from '../ICountDownLatch';
 import {CPProxyManager} from './CPProxyManager';
 import {RaftGroupId} from './RaftGroupId';
@@ -35,10 +34,14 @@ import {
     UUID
 } from '../../core';
 
+interface ClientForCountDownLatchProxy extends ClientForBaseCPProxy {
+
+}
+
 /** @internal */
 export class CountDownLatchProxy extends BaseCPProxy implements ICountDownLatch {
 
-    constructor(client: HazelcastClient,
+    constructor(client: ClientForCountDownLatchProxy,
                 groupId: RaftGroupId,
                 proxyName: string,
                 objectName: string) {
@@ -90,7 +93,8 @@ export class CountDownLatchProxy extends BaseCPProxy implements ICountDownLatch 
             this.objectName,
             invocationUid,
             round
-        ).then(() => {});
+        ).then(() => {
+        });
     }
 
     getCount(): Promise<number> {

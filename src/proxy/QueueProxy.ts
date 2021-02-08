@@ -40,8 +40,16 @@ import {IllegalStateError, UUID} from '../core';
 import {ListenerMessageCodec} from '../listener/ListenerMessageCodec';
 import {Data} from '../serialization/Data';
 import {IQueue} from './IQueue';
-import {PartitionSpecificProxy} from './PartitionSpecificProxy';
+import {ClientForPartititonSpecificProxy, PartitionSpecificProxy} from './PartitionSpecificProxy';
 import {ClientMessage} from '../protocol/ClientMessage';
+import {ClusterService} from "../invocation/ClusterService";
+import {ListenerService} from "../listener/ListenerService";
+
+interface ClientForQueueProxy extends ClientForPartititonSpecificProxy {
+    getClusterService(): ClusterService;
+
+    getListenerService(): ListenerService;
+}
 
 /** @internal */
 export class QueueProxy<E> extends PartitionSpecificProxy implements IQueue<E> {
@@ -76,7 +84,7 @@ export class QueueProxy<E> extends PartitionSpecificProxy implements IQueue<E> {
                     responseObject = this.toObject(item);
                 }
 
-                const member = this.client.getClusterService().getMember(uuid);
+                const member = (this.client as ClientForQueueProxy).getClusterService().getMember(uuid);
                 const name = this.name;
                 const itemEvent = new ItemEvent(name, eventType, responseObject, member);
 
@@ -88,11 +96,12 @@ export class QueueProxy<E> extends PartitionSpecificProxy implements IQueue<E> {
             });
         };
         const codec = this.createEntryListener(this.name, includeValue);
-        return this.client.getListenerService().registerListener(codec, handler);
+        return (this.client as ClientForQueueProxy).getListenerService().registerListener(codec, handler);
     }
 
     clear(): Promise<void> {
-        return this.encodeInvoke(QueueClearCodec).then(() => {});
+        return this.encodeInvoke(QueueClearCodec).then(() => {
+        });
     }
 
     contains(item: E): Promise<boolean> {
@@ -155,7 +164,8 @@ export class QueueProxy<E> extends PartitionSpecificProxy implements IQueue<E> {
 
     put(item: E): Promise<void> {
         const itemData = this.toData(item);
-        return this.encodeInvoke(QueuePutCodec, itemData).then(() => {});
+        return this.encodeInvoke(QueuePutCodec, itemData).then(() => {
+        });
     }
 
     remainingCapacity(): Promise<number> {
@@ -177,7 +187,7 @@ export class QueueProxy<E> extends PartitionSpecificProxy implements IQueue<E> {
     }
 
     removeItemListener(registrationId: string): Promise<boolean> {
-        return this.client.getListenerService().deregisterListener(registrationId);
+        return (this.client as ClientForQueueProxy).getListenerService().deregisterListener(registrationId);
     }
 
     retainAll(items: E[]): Promise<boolean> {

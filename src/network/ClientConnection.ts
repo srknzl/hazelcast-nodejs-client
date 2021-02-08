@@ -19,7 +19,6 @@ import * as net from 'net';
 import {EventEmitter} from 'events';
 import {BitsUtil} from '../util/BitsUtil';
 import {BuildInfo} from '../BuildInfo';
-import {HazelcastClient} from '../HazelcastClient';
 import {AddressImpl, IOError, UUID} from '../core';
 import {ClientMessageHandler} from '../protocol/ClientMessage';
 import {deferredPromise, DeferredPromise} from '../util/Util';
@@ -29,6 +28,10 @@ import {
     Frame,
     SIZE_OF_FRAME_LENGTH_AND_FLAGS
 } from '../protocol/ClientMessage';
+import {ClientConfig} from "../config";
+import {LoggingService} from "../logging/LoggingService";
+import {ClientConnectionManager} from "./ClientConnectionManager";
+import {LifecycleService} from "../LifecycleService";
 
 const FROZEN_ARRAY = Object.freeze([]) as OutputQueueItem[];
 const PROPERTY_PIPELINING_ENABLED = 'hazelcast.client.autopipelining.enabled';
@@ -82,7 +85,7 @@ export class PipelinedWriter extends Writer {
             // if there was a write error, it's useless to keep writing to the socket
             return process.nextTick(() => resolver.reject(this.error));
         }
-        this.queue.push({ message, resolver });
+        this.queue.push({message, resolver});
         this.schedule();
     }
 
@@ -215,7 +218,7 @@ export class ClientMessageReader {
     }
 
     read(): ClientMessage {
-        for (;;) {
+        for (; ;) {
             if (this.readFrame()) {
                 if (this.clientMessage.endFrame.isFinalFrame()) {
                     const message = this.clientMessage;
@@ -320,6 +323,16 @@ export class FragmentedClientMessageHandler {
     }
 }
 
+export interface ClientForClientConnection {
+    getConfig(): ClientConfig;
+
+    getLoggingService(): LoggingService;
+
+    getConnectionManager(): ClientConnectionManager;
+
+    getLifecycleService(): LifecycleService;
+}
+
 /** @internal */
 export class ClientConnection {
 
@@ -329,7 +342,7 @@ export class ClientConnection {
     private readonly localAddress: AddressImpl;
     private lastReadTimeMillis: number;
     private lastWriteTimeMillis: number;
-    private readonly client: HazelcastClient;
+    private readonly client: ClientForClientConnection;
     private readonly startTime: number = Date.now();
     private closedTime: number;
     private closedReason: string;
@@ -341,7 +354,7 @@ export class ClientConnection {
     private readonly logger: ILogger;
     private readonly fragmentedMessageHandler: FragmentedClientMessageHandler;
 
-    constructor(client: HazelcastClient, remoteAddress: AddressImpl, socket: net.Socket, connectionId: number) {
+    constructor(client: ClientForClientConnection, remoteAddress: AddressImpl, socket: net.Socket, connectionId: number) {
         const enablePipelining = client.getConfig().properties[PROPERTY_PIPELINING_ENABLED] as boolean;
         const pipeliningThreshold = client.getConfig().properties[PROPERTY_PIPELINING_THRESHOLD] as number;
         const noDelay = client.getConfig().properties[PROPERTY_NO_DELAY] as boolean;

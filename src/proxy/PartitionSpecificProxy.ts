@@ -15,16 +15,20 @@
  */
 /** @ignore *//** */
 
-import {HazelcastClient} from '../HazelcastClient';
-import {BaseProxy} from './BaseProxy';
+import {BaseProxy, ClientForBaseProxy} from './BaseProxy';
 import {ClientMessage} from '../protocol/ClientMessage';
+import {PartitionService} from "../PartitionService";
+
+export interface ClientForPartititonSpecificProxy extends ClientForBaseProxy {
+    getPartitionService(): PartitionService;
+}
 
 /** @internal */
 export class PartitionSpecificProxy extends BaseProxy {
 
     private partitionId: number;
 
-    constructor(client: HazelcastClient, serviceName: string, name: string) {
+    constructor(client: ClientForPartititonSpecificProxy, serviceName: string, name: string) {
         super(client, serviceName, name);
         this.partitionId = this.client.getPartitionService().getPartitionId(this.getPartitionKey());
     }

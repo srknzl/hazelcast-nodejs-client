@@ -15,8 +15,9 @@
  */
 
 import {EventEmitter} from 'events';
-import {HazelcastClient} from './HazelcastClient';
 import {ILogger} from './logging/ILogger';
+import {LoggingService} from "./logging/LoggingService";
+import {ClientConfig} from "./config";
 
 /**
  * Lifecycle states.
@@ -76,14 +77,23 @@ export interface LifecycleService {
 
 }
 
+interface ClientForLifecycleService {
+    getLoggingService(): LoggingService;
+
+    getConfig(): ClientConfig;
+
+    doShutdown(): Promise<void>;
+}
+
+
 /** @internal */
 export class LifecycleServiceImpl extends EventEmitter implements LifecycleService {
 
     private active: boolean;
-    private client: HazelcastClient;
+    private client: ClientForLifecycleService;
     private logger: ILogger;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForLifecycleService) {
         super();
         this.setMaxListeners(0);
         this.client = client;

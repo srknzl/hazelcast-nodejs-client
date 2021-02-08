@@ -16,10 +16,27 @@
 /** @ignore *//** */
 
 import {BuildInfo} from '../BuildInfo';
-import {HazelcastClient} from '../HazelcastClient';
 import {Data} from '../serialization/Data';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {UUID} from '../core/UUID';
+import {InvocationService} from "../invocation/InvocationService";
+import {ProxyManager} from "./ProxyManager";
+import {PartitionService} from "../PartitionService";
+import {SerializationService} from "../serialization/SerializationService";
+import {ClientConnectionManager} from "../network/ClientConnectionManager";
+
+
+export interface ClientForBaseProxy {
+    getInvocationService(): InvocationService;
+
+    getProxyManager(): ProxyManager;
+
+    getPartitionService(): PartitionService;
+
+    getSerializationService(): SerializationService;
+
+    getConnectionManager(): ClientConnectionManager;
+}
 
 /**
  * Common super class for any proxy.
@@ -27,11 +44,11 @@ import {UUID} from '../core/UUID';
  */
 export abstract class BaseProxy {
 
-    protected client: HazelcastClient;
+    protected client: ClientForBaseProxy;
     protected readonly name: string;
     protected readonly serviceName: string;
 
-    constructor(client: HazelcastClient, serviceName: string, name: string) {
+    constructor(client: ClientForBaseProxy, serviceName: string, name: string) {
         this.client = client;
         this.name = name;
         this.serviceName = serviceName;
@@ -93,7 +110,7 @@ export abstract class BaseProxy {
 
     protected encodeInvokeOnTarget(codec: any, target: UUID, ...codecArguments: any[]): Promise<ClientMessage> {
         const clientMessage = codec.encodeRequest(this.name, ...codecArguments);
-        return  this.client.getInvocationService().invokeOnTarget(clientMessage, target);
+        return this.client.getInvocationService().invokeOnTarget(clientMessage, target);
     }
 
     /**

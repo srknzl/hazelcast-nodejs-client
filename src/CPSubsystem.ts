@@ -21,9 +21,9 @@ import {
     FencedLock,
     ISemaphore
 } from './proxy';
-import {CPProxyManager} from './proxy/cpsubsystem/CPProxyManager';
-import {CPSessionManager} from './proxy/cpsubsystem/CPSessionManager';
-import {HazelcastClient} from './HazelcastClient';
+import {ClientForCPProxyManager, CPProxyManager} from './proxy/cpsubsystem/CPProxyManager';
+import {ClientForCPSessionManager, CPSessionManager} from './proxy/cpsubsystem/CPSessionManager';
+import {ClientForCPSessionAwareProxy} from "./proxy/cpsubsystem/CPSessionAwareProxy";
 
 /**
  * CP Subsystem is a component of Hazelcast that builds a strongly consistent
@@ -113,13 +113,17 @@ export interface CPSubsystem {
 
 }
 
+interface ClientForCPSubsystem extends ClientForCPSessionAwareProxy, ClientForCPSessionManager, ClientForCPProxyManager {
+
+}
+
 /** @internal */
 export class CPSubsystemImpl implements CPSubsystem {
 
     private readonly cpProxyManager: CPProxyManager;
     private readonly cpSessionManager: CPSessionManager;
 
-    constructor(client: HazelcastClient) {
+    constructor(client: ClientForCPSubsystem) {
         this.cpProxyManager = new CPProxyManager(client);
         this.cpSessionManager = new CPSessionManager(client);
     }

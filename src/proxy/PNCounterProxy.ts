@@ -23,9 +23,14 @@ import {dataMemberSelector} from '../core/MemberSelector';
 import {VectorClock} from './VectorClock';
 import {NoDataMemberInClusterError} from '../core';
 import {randomInt} from '../util/Util';
-import {BaseProxy} from './BaseProxy';
+import {BaseProxy, ClientForBaseProxy} from './BaseProxy';
 import {PNCounter} from './PNCounter';
 import {MemberImpl} from '../core/Member';
+import {ClusterService} from "../invocation/ClusterService";
+
+interface ClientForPNCounterProxy extends ClientForBaseProxy {
+    getClusterService(): ClusterService;
+}
 
 /** @internal */
 export class PNCounterProxy extends BaseProxy implements PNCounter {
@@ -134,7 +139,7 @@ export class PNCounterProxy extends BaseProxy implements PNCounter {
     }
 
     private getReplicaAddresses(excludedAddresses: MemberImpl[]): Promise<MemberImpl[]> {
-        const dataMembers = this.client.getClusterService().getMembers(dataMemberSelector);
+        const dataMembers = (this.client as ClientForPNCounterProxy).getClusterService().getMembers(dataMemberSelector);
         return this.getMaxConfiguredReplicaCount().then((replicaCount: number) => {
             const currentCount = Math.min(replicaCount, dataMembers.length);
             const replicaAddresses: MemberImpl[] = [];
