@@ -65,6 +65,7 @@ import {ClusterViewListenerService} from './listener/ClusterViewListenerService'
 import {ClientMessage} from './protocol/ClientMessage';
 import {ClientConnection} from './network/ClientConnection';
 import {ConnectionRegistry, ConnectionRegistryImpl} from './network/ConnectionRegistry';
+import {ClientStateImpl} from './ClientState';
 
 /**
  * Hazelcast client instance. When you want to use Hazelcast's distributed
@@ -84,6 +85,8 @@ export class HazelcastClient {
     private readonly id: number = HazelcastClient.CLIENT_ID++;
     /** @internal */
     private readonly config: ClientConfigImpl;
+    /** @internal */
+    private readonly clientState: ClientStateImpl;
     /** @internal */
     private readonly failoverConfig?: ClientFailoverConfigImpl;
     /** @internal */
@@ -132,7 +135,8 @@ export class HazelcastClient {
         } else {
             this.config = failoverConfig.clientConfigs[0];
         }
-        this.connectionRegistry = new ConnectionRegistryImpl(this.config.connectionStrategy);
+        this.clientState = new ClientStateImpl();
+        this.connectionRegistry = new ConnectionRegistryImpl(this.config.connectionStrategy, this.clientState);
         this.failoverConfig = failoverConfig;
         this.errorFactory = new ClientErrorFactory();
         this.serializationService = new SerializationServiceV1(this.config.serialization);
@@ -183,7 +187,8 @@ export class HazelcastClient {
             this.failoverConfig,
             this.clusterService,
             this.invocationService,
-            this.connectionRegistry
+            this.connectionRegistry,
+            this.clientState
         );
 
         this.listenerService = new ListenerService(

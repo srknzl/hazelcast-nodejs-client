@@ -69,7 +69,8 @@ import {AddressProvider} from '../connection/AddressProvider';
 import {ClientFailoverConfig} from '../config';
 import {ClusterService} from '../invocation/ClusterService';
 import {SerializationService} from '../serialization/SerializationService';
-import {ConnectionRegistry, ClientState} from './ConnectionRegistry';
+import {ConnectionRegistry} from './ConnectionRegistry';
+import {ClientState, ClientStateEnum} from '../ClientState';
 
 const CONNECTION_REMOVED_EVENT_NAME = 'connectionRemoved';
 const CONNECTION_ADDED_EVENT_NAME = 'connectionAdded';
@@ -128,6 +129,7 @@ export class ClientConnectionManager extends EventEmitter {
     private readonly clusterService: ClusterService;
     private readonly invocationService: InvocationService;
     private readonly connectionRegistry: ConnectionRegistry;
+    private readonly clientState: ClientState;
 
     constructor(
         client: ClientForClientConnectionManager,
@@ -142,10 +144,12 @@ export class ClientConnectionManager extends EventEmitter {
         failoverConfig: ClientFailoverConfig,
         clusterService: ClusterService,
         invocationService: InvocationService,
-        connectionRegistry: ConnectionRegistry
+        connectionRegistry: ConnectionRegistry,
+        clientState: ClientState
     ) {
         super();
         this.client = client;
+        this.clientState = clientState;
         this.clientConfig = clientConfig;
         this.clientName = clientName;
         this.invocationService = invocationService;
@@ -332,7 +336,7 @@ export class ClientConnectionManager extends EventEmitter {
             this.logger.info('ConnectionManager', 'Removed connection to endpoint: '
                 + endpoint + ':' + memberUuid + ', connection: ' + connection);
             if (this.connectionRegistry.isEmpty()) {
-                if (this.connectionRegistry.getClientState() === ClientState.INITIALIZED_ON_CLUSTER) {
+                if (this.clientState.getState() === ClientStateEnum.INITIALIZED_ON_CLUSTER) {
                     this.emitLifecycleEvent(LifecycleState.DISCONNECTED);
                 }
                 this.triggerClusterReconnection();
@@ -808,10 +812,10 @@ export class ClientConnectionManager extends EventEmitter {
         if (this.connectionRegistry.isEmpty()) {
             this.clusterId = newClusterId;
             if (clusterIdChanged) {
-                this.connectionRegistry.setClientState(ClientState.CONNECTED_TO_CLUSTER);
+                this.clientState.setState(ClientStateEnum.CONNECTED_TO_CLUSTER);
                 this.initializeClientOnCluster(newClusterId);
             } else {
-                this.connectionRegistry.setClientState(ClientState.INITIALIZED_ON_CLUSTER);
+                this.clientState.setState(ClientStateEnum.INITIALIZED_ON_CLUSTER);
                 this.emitLifecycleEvent(LifecycleState.CONNECTED);
             }
         }
@@ -891,7 +895,7 @@ export class ClientConnectionManager extends EventEmitter {
                     this.logger.trace('ConnectionManager', 'Client state is sent to cluster: '
                         + targetClusterId);
 
-                    this.connectionRegistry.setClientState(ClientState.INITIALIZED_ON_CLUSTER);
+                    this.clientState.setState(ClientStateEnum.INITIALIZED_ON_CLUSTER);
                     this.emitLifecycleEvent(LifecycleState.CONNECTED);
                 } else {
                     this.logger.warn('ConnectionManager', 'Cannot set client state to initialized on '

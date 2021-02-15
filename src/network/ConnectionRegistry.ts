@@ -1,33 +1,7 @@
 import {ClientConnection} from './ClientConnection';
 import {ClientOfflineError, IOError, LoadBalancer, UUID} from '../core';
 import {ConnectionStrategyConfig, ReconnectMode} from '../config';
-
-export enum ClientState {
-    /**
-     * Clients start with this state. Once a client connects to a cluster,
-     * it directly switches to {@link INITIALIZED_ON_CLUSTER} instead of
-     * {@link CONNECTED_TO_CLUSTER} because on startup a client has no
-     * local state to send to the cluster.
-     */
-    INITIAL = 0,
-
-    /**
-     * When a client switches to a new cluster, it moves to this state.
-     * It means that the client has connected to a new cluster but not sent
-     * its local state to the new cluster yet.
-     */
-    CONNECTED_TO_CLUSTER = 1,
-
-    /**
-     * When a client sends its local state to the cluster it has connected,
-     * it switches to this state. When a client loses all connections to
-     * the current cluster and connects to a new cluster, its state goes
-     * back to {@link CONNECTED_TO_CLUSTER}.
-     * <p>
-     * Invocations are allowed in this state.
-     */
-    INITIALIZED_ON_CLUSTER = 2,
-}
+import {ClientState, ClientStateEnum} from '../ClientState';
 
 export interface ConnectionRegistry {
     /**
@@ -81,18 +55,6 @@ export interface ConnectionRegistry {
     deleteConnection(uuid: UUID): void;
 
     /**
-     * Returns client state.
-     * @return ClientState enum value
-     */
-    getClientState(): ClientState;
-
-    /**
-     * Sets the client state
-     * @param clientState
-     */
-    setClientState(clientState: ClientState): void;
-
-    /**
      * Adds or updates a client connection by uuid
      * @param uuid UUID to identify the connection
      * @param connection the ClientConnection to set
@@ -105,22 +67,18 @@ export class ConnectionRegistryImpl implements ConnectionRegistry {
     private active = false;
     private activeConnections = new Map<string, ClientConnection>();
     private loadBalancer: LoadBalancer;
-    private clientState = ClientState.INITIAL;
+    private clientState: ClientState;
     private readonly smartRoutingEnabled: boolean;
     private readonly asyncStart: boolean;
     private readonly reconnectMode: ReconnectMode;
 
-    constructor(connectionStrategy: ConnectionStrategyConfig) {
+    constructor(connectionStrategy: ConnectionStrategyConfig, clientState: ClientState) {
         this.asyncStart = connectionStrategy.asyncStart;
         this.reconnectMode = connectionStrategy.reconnectMode;
     }
 
     isActive(): boolean {
         return this.active;
-    }
-
-    getClientState(): ClientState {
-        return this.clientState;
     }
 
     isEmpty(): boolean {
@@ -160,13 +118,13 @@ export class ConnectionRegistryImpl implements ConnectionRegistry {
     }
 
     checkIfInvocationAllowed(): Error {
-        const state = this.clientState;
-        if (state === ClientState.INITIALIZED_ON_CLUSTER && this.activeConnections.size > 0) {
+        const state = this.clientState.getState();
+        if (state === ClientStateEnum.INITIALIZED_ON_CLUSTER && this.activeConnections.size > 0) {
             return null;
         }
 
         let error: Error;
-        if (state === ClientState.INITIAL) {
+        if (state === ClientStateEnum.INITIAL) {
             if (this.asyncStart) {
                 error = new ClientOfflineError();
             } else {
@@ -186,9 +144,5 @@ export class ConnectionRegistryImpl implements ConnectionRegistry {
 
     setConnection(uuid: UUID, connection: ClientConnection): void {
         this.activeConnections.set(uuid.toString(), connection);
-    }
-
-    setClientState(clientState: ClientState): void {
-        this.clientState = clientState;
     }
 }
