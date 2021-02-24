@@ -86,7 +86,8 @@ export class PartitionServiceImpl implements PartitionService {
                              partitions: Array<[UUID, number[]]>,
                              partitionStateVersion: number): void {
         this.logger.debug('PartitionService',
-            'Handling new partition table with partitionStateVersion: ' + partitionStateVersion);
+            'Handling new partition table with partitionStateVersion: ' + partitionStateVersion + ' '
+            + partitions.toString() + ' ' + connection.toString());
         if (!this.shouldBeApplied(connection, partitions, partitionStateVersion, this.partitionTable)) {
             return;
         }

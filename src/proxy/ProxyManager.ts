@@ -48,8 +48,7 @@ import {SerializationService} from '../serialization/SerializationService';
 import {ConnectionRegistry} from '../network/ClientConnectionManager';
 import {NearCacheManager} from '../nearcache/NearCacheManager';
 import {RepairingTask} from '../nearcache/RepairingTask';
-import {ClusterService} from '../invocation/ClusterService';
-import {LockReferenceIdGenerator} from './LockReferenceIdGenerator';
+import {HazelcastClient} from '../HazelcastClient';
 
 /** @internal */
 export const NAMESPACE_SEPARATOR = '/';
@@ -80,9 +79,8 @@ export class ProxyManager {
     private readonly serializationService: SerializationService;
     private readonly nearCacheManager: NearCacheManager;
     private readonly getRepairingTask: () => RepairingTask;
-    private readonly clusterService: ClusterService;
-    private readonly lockReferenceIdGenerator: LockReferenceIdGenerator;
     private readonly connectionRegistry: ConnectionRegistry;
+    private readonly client: HazelcastClient;
 
     constructor(
         clientConfig: ClientConfig,
@@ -93,9 +91,8 @@ export class ProxyManager {
         serializationService: SerializationService,
         nearCacheManager: NearCacheManager,
         getRepairingTask: () => RepairingTask,
-        clusterService: ClusterService,
-        lockReferenceIdGenerator: LockReferenceIdGenerator,
-        connectionRegistry: ConnectionRegistry
+        connectionRegistry: ConnectionRegistry,
+        client: HazelcastClient
     ) {
         this.invocationService = invocationService;
         this.clientConfig = clientConfig;
@@ -105,8 +102,7 @@ export class ProxyManager {
         this.serializationService = serializationService;
         this.nearCacheManager = nearCacheManager;
         this.getRepairingTask = getRepairingTask;
-        this.clusterService = clusterService;
-        this.lockReferenceIdGenerator = lockReferenceIdGenerator;
+        this.client = client;
         this.connectionRegistry = connectionRegistry;
     }
 
@@ -255,7 +251,7 @@ export class ProxyManager {
                 this.nearCacheManager,
                 this.getRepairingTask,
                 this.listenerService,
-                this.clusterService,
+                this.client.getClusterService(),
                 this.connectionRegistry
             );
         } else if (serviceName === ProxyManager.MULTIMAP_SERVICE){
@@ -268,8 +264,8 @@ export class ProxyManager {
                 this.invocationService,
                 this.serializationService,
                 this.listenerService,
-                this.clusterService,
-                this.lockReferenceIdGenerator,
+                this.client.getClusterService(),
+                this.client.getLockReferenceIdGenerator(),
                 this.connectionRegistry
             );
         } else if (serviceName === ProxyManager.RELIABLETOPIC_SERVICE){
@@ -284,7 +280,7 @@ export class ProxyManager {
                 this.invocationService,
                 this.serializationService,
                 this.listenerService,
-                this.clusterService,
+                this.client.getClusterService(),
                 this.connectionRegistry
             );
         } else if (serviceName === ProxyManager.FLAKEID_SERVICE){
@@ -298,7 +294,7 @@ export class ProxyManager {
                 this.invocationService,
                 this.serializationService,
                 this.listenerService,
-                this.clusterService,
+                this.client.getClusterService(),
                 this.connectionRegistry
             );
         } else {
@@ -311,7 +307,7 @@ export class ProxyManager {
                 this.invocationService,
                 this.serializationService,
                 this.listenerService,
-                this.clusterService,
+                this.client.getClusterService(),
                 this.connectionRegistry
             );
         }

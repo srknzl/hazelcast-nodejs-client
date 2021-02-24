@@ -65,12 +65,12 @@ import {
     ClientAuthenticationResponseParams
 } from '../codec/ClientAuthenticationCodec';
 import {AuthenticationStatus} from '../protocol/AuthenticationStatus';
-import {Invocation, InvocationService} from '../invocation/InvocationService';
+import {Invocation} from '../invocation/InvocationService';
 import {PartitionService, PartitionServiceImpl} from '../PartitionService';
 import {AddressProvider} from '../connection/AddressProvider';
 import {ClientFailoverConfig} from '../config';
-import {ClusterService} from '../invocation/ClusterService';
 import {SerializationService} from '../serialization/SerializationService';
+import {HazelcastClient} from '../HazelcastClient';
 
 const CONNECTION_REMOVED_EVENT_NAME = 'connectionRemoved';
 const CONNECTION_ADDED_EVENT_NAME = 'connectionAdded';
@@ -333,9 +333,8 @@ export class ClientConnectionManager extends EventEmitter {
     private readonly partitionService: PartitionService;
     private readonly serializationService: SerializationService;
     private readonly lifecycleService: LifecycleService;
-    private readonly clusterService: ClusterService;
-    private readonly invocationService: InvocationService;
     private readonly connectionRegistry: ConnectionRegistry;
+    private readonly hzclient: HazelcastClient;
 
     constructor(
         client: ClientForClientConnectionManager,
@@ -348,18 +347,16 @@ export class ClientConnectionManager extends EventEmitter {
         loadBalancer: LoadBalancer,
         clusterFailoverService: ClusterFailoverService,
         failoverConfig: ClientFailoverConfig,
-        clusterService: ClusterService,
-        invocationService: InvocationService,
-        connectionRegistry: ConnectionRegistry
+        connectionRegistry: ConnectionRegistry,
+        hzClient: HazelcastClient
     ) {
         super();
         this.client = client;
         this.clientConfig = clientConfig;
         this.clientName = clientName;
-        this.invocationService = invocationService;
+        this.hzclient = hzClient;
         this.serializationService = serializationService;
         this.partitionService = partitionService;
-        this.clusterService = clusterService;
         this.lifecycleService = lifecycleService;
         this.connectionRegistry = connectionRegistry;
         this.labels = this.clientConfig.clientLabels;
@@ -387,7 +384,7 @@ export class ClientConnectionManager extends EventEmitter {
         }
         this.connectionRegistry.activate();
 
-        this.heartbeatManager.start(this.invocationService);
+        this.heartbeatManager.start(this.hzclient.getInvocationService());
         return this.connectToCluster();
     }
 
@@ -396,7 +393,7 @@ export class ClientConnectionManager extends EventEmitter {
             return Promise.resolve();
         }
 
-        const members = this.clusterService.getMembers();
+        const members = this.hzclient.getClusterService().getMembers();
         return this.tryConnectToAllClusterMembers(members)
             .then(() => {
                 this.reconnectToMembersTask = scheduleWithRepetition(this.reconnectToMembers.bind(this), 1000, 1000);
@@ -474,7 +471,7 @@ export class ClientConnectionManager extends EventEmitter {
         this.pendingConnections.set(addressKey, connectionResolver);
 
         const processResponseCallback = (msg: ClientMessage): void => {
-            this.invocationService.processResponse(msg);
+            this.hzclient.getInvocationService().processResponse(msg);
         };
 
         let translatedAddress: AddressImpl;
@@ -619,7 +616,7 @@ export class ClientConnectionManager extends EventEmitter {
         return this.doConnectToCandidateCluster(nextCtx)
             .then((connected) => {
                 if (connected) {
-                    return this.clusterService.waitForInitialMemberList()
+                    return this.hzclient.getClusterService().waitForInitialMemberList()
                         .then(() => {
                             this.emitLifecycleEvent(LifecycleState.CHANGED_CLUSTER);
                             return true;
@@ -639,7 +636,7 @@ export class ClientConnectionManager extends EventEmitter {
                                      triedAddresses: Set<string>): Promise<boolean> {
         const triedAddressesPerAttempt = new Set<string>();
 
-        const members = this.clusterService.getMembers();
+        const members = this.hzclient.getClusterService().getMembers();
         if (this.shuffleMemberList) {
             shuffleArray(members);
         }
@@ -883,7 +880,7 @@ export class ClientConnectionManager extends EventEmitter {
         if (member.addressMap == null) {
             return this.translateAddress(member.address);
         }
-        if (this.clusterService.translateToPublicAddress()) {
+        if (this.hzclient.getClusterService().translateToPublicAddress()) {
             const publicAddress = lookupPublicAddress(member);
             if (publicAddress != null) {
                 return Promise.resolve(publicAddress);
@@ -919,7 +916,7 @@ export class ClientConnectionManager extends EventEmitter {
             return;
         }
 
-        for (const member of this.clusterService.getMembers()) {
+        for (const member of this.hzclient.getClusterService().getMembers()) {
             if (this.connectionRegistry.getConnection(member.uuid) != null) {
                 continue;
             }
@@ -940,10 +937,10 @@ export class ClientConnectionManager extends EventEmitter {
 
     private authenticateOnCluster(connection: ClientConnection): Promise<ClientConnection> {
         const request = this.encodeAuthenticationRequest();
-        const invocation = new Invocation(this.invocationService, request);
+        const invocation = new Invocation(this.hzclient.getInvocationService(), request);
         invocation.connection = connection;
         return timedPromise(
-            this.invocationService.invokeUrgent(invocation),
+            this.hzclient.getInvocationService().invokeUrgent(invocation),
             this.authenticationTimeout
         ).catch((err) => {
             connection.close('Authentication failed', err);

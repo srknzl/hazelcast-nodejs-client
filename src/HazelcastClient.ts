@@ -132,14 +132,18 @@ export class HazelcastClient {
         } else {
             this.config = failoverConfig.clientConfigs[0];
         }
-        this.connectionRegistry = new ConnectionRegistryImpl(this.config.connectionStrategy);
+
         this.failoverConfig = failoverConfig;
-        this.errorFactory = new ClientErrorFactory();
-        this.serializationService = new SerializationServiceV1(this.config.serialization);
         this.instanceName = this.config.instanceName || 'hz.client_' + this.id;
         this.loggingService = new LoggingService(this.config.customLogger,
             this.config.properties['hazelcast.logging.level'] as string);
         this.loadBalancer = this.initLoadBalancer();
+        this.listenerService = new ListenerService(
+            this.loggingService.getLogger(),
+            this.config.network.smartRouting,
+            this
+        );
+        this.serializationService = new SerializationServiceV1(this.config.serialization);
         this.nearCacheManager = new NearCacheManager(
             this.config,
             this.serializationService
@@ -153,19 +157,8 @@ export class HazelcastClient {
             this.loggingService.getLogger()
         );
         this.clusterFailoverService = this.initClusterFailoverService();
-        this.clusterService = new ClusterService(
-            this.config,
-            this.loggingService.getLogger(),
-            this.clusterFailoverService
-        );
-        this.invocationService = new InvocationService(
-            this.config,
-            this.loggingService.getLogger(),
-            this.partitionService,
-            this.errorFactory,
-            this.lifecycleService,
-            this.connectionRegistry
-        );
+
+        this.connectionRegistry = new ConnectionRegistryImpl(this.config.connectionStrategy);
         this.connectionManager = new ClientConnectionManager(
             this,
             this.instanceName,
@@ -177,18 +170,17 @@ export class HazelcastClient {
             this.loadBalancer,
             this.clusterFailoverService,
             this.failoverConfig,
-            this.clusterService,
-            this.invocationService,
-            this.connectionRegistry
+            this.connectionRegistry,
+            this
         );
-        this.listenerService = new ListenerService(
+        this.invocationService = new InvocationService(
+            this.config,
             this.loggingService.getLogger(),
-            this.config.network.smartRouting,
-            this.connectionManager,
-            this.invocationService,
-            this.connectionRegistry
+            this.partitionService,
+            this.lifecycleService,
+            this.connectionRegistry,
+            this
         );
-        this.lockReferenceIdGenerator = new LockReferenceIdGenerator();
         this.proxyManager = new ProxyManager(
             this.config,
             this.loggingService.getLogger(),
@@ -198,10 +190,22 @@ export class HazelcastClient {
             this.serializationService,
             this.nearCacheManager,
             () => this.getRepairingTask(),
-            this.clusterService,
-            this.lockReferenceIdGenerator,
-            this.connectionRegistry
+            this.connectionRegistry,
+            this
         );
+        this.cpSubsystem = new CPSubsystemImpl(
+            this.loggingService.getLogger(),
+            this.instanceName,
+            this.invocationService,
+            this.serializationService
+        );
+        this.clusterService = new ClusterService(
+            this.config,
+            this.loggingService.getLogger(),
+            this.clusterFailoverService
+        );
+        this.lockReferenceIdGenerator = new LockReferenceIdGenerator();
+        this.errorFactory = new ClientErrorFactory();
         this.statistics = new Statistics(
             this.loggingService.getLogger(),
             this.config.properties,
@@ -217,12 +221,6 @@ export class HazelcastClient {
             this.clusterService,
             this.invocationService,
             this.connectionRegistry
-        );
-        this.cpSubsystem = new CPSubsystemImpl(
-            this.loggingService.getLogger(),
-            this.instanceName,
-            this.invocationService,
-            this.serializationService
         );
     }
 
@@ -260,6 +258,10 @@ export class HazelcastClient {
      */
     getName(): string {
         return this.instanceName;
+    }
+
+    getLockReferenceIdGenerator(): LockReferenceIdGenerator {
+        return this.lockReferenceIdGenerator;
     }
 
     /**
@@ -508,8 +510,8 @@ export class HazelcastClient {
         this.statistics.stop();
         return this.cpSubsystem.shutdown()
             .then(() => {
-                this.invocationService.shutdown();
                 this.connectionManager.shutdown();
+                this.invocationService.shutdown();
             })
             .then(() => {
                 this.lifecycleService.onShutdownFinished();
@@ -522,6 +524,10 @@ export class HazelcastClient {
             .info('HazelcastClient', 'Clearing local state of the client, because of a cluster restart.');
         this.nearCacheManager.clearAllNearCaches();
         this.clusterService.clearMemberListVersion();
+    }
+
+    getConnectionRegistry(){
+        return this.connectionRegistry;
     }
 
     /** @internal */

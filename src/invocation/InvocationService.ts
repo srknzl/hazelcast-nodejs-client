@@ -33,7 +33,7 @@ import {ClientMessage, IS_BACKUP_AWARE_FLAG} from '../protocol/ClientMessage';
 import {ListenerMessageCodec} from '../listener/ListenerMessageCodec';
 import {ClientLocalBackupListenerCodec} from '../codec/ClientLocalBackupListenerCodec';
 import {EXCEPTION_MESSAGE_TYPE} from '../codec/builtin/ErrorsCodec';
-import {PartitionService, PartitionServiceImpl} from '../PartitionService';
+import {PartitionService} from '../PartitionService';
 import {
     scheduleWithRepetition,
     cancelRepetitionTask,
@@ -43,9 +43,9 @@ import {
 } from '../util/Util';
 import {ClientConfig} from '../config';
 import {ListenerService} from '../listener/ListenerService';
-import {ClientErrorFactory} from '../protocol/ErrorFactory';
 import {LifecycleService} from '../LifecycleService';
 import {ConnectionRegistry} from '../network/ClientConnectionManager';
+import {HazelcastClient} from '../HazelcastClient';
 
 const MAX_FAST_INVOCATION_COUNT = 5;
 const PROPERTY_INVOCATION_RETRY_PAUSE_MILLIS = 'hazelcast.client.invocation.retry.pause.millis';
@@ -254,28 +254,28 @@ export class InvocationService {
     private readonly operationBackupTimeoutMillis: number;
     private readonly backupAckToClientEnabled: boolean;
     private readonly logger: ILogger;
-    private readonly partitionService: PartitionServiceImpl;
+    private readonly partitionService: PartitionService;
     private readonly cleanResourcesMillis: number;
     private readonly redoOperation: boolean;
     private correlationCounter = 1;
     private cleanResourcesTask: Task;
     private isShutdown: boolean;
-    private readonly errorFactory: ClientErrorFactory;
     private readonly lifecycleService: LifecycleService;
     private readonly connectionRegistry: ConnectionRegistry;
+    private readonly client: HazelcastClient;
 
     constructor(
         clientConfig: ClientConfig,
         logger: ILogger,
         partitionService: PartitionService,
-        errorFactory: ClientErrorFactory,
         lifecycleService: LifecycleService,
-        connectionRegistry: ConnectionRegistry
+        connectionRegistry: ConnectionRegistry,
+        client: HazelcastClient
     ) {
+        this.client = client;
         this.connectionRegistry = connectionRegistry;
-        this.partitionService = partitionService as PartitionServiceImpl;
+        this.partitionService = partitionService;
         this.logger = logger;
-        this.errorFactory = errorFactory;
         this.lifecycleService = lifecycleService;
         if (clientConfig.network.smartRouting) {
             this.doInvoke = this.invokeSmart;
@@ -450,7 +450,7 @@ export class InvocationService {
         }
         const messageType = clientMessage.getMessageType();
         if (messageType === EXCEPTION_MESSAGE_TYPE) {
-            const remoteError = this.errorFactory.createErrorFromClientMessage(clientMessage);
+            const remoteError = this.client.getErrorFactory().createErrorFromClientMessage(clientMessage);
             this.notifyError(pendingInvocation, remoteError);
         } else {
             pendingInvocation.notify(clientMessage);
