@@ -30,12 +30,12 @@ export interface Address {
     /**
      * Host name or IP address.
      */
-    host: string;
+    host: string | undefined;
 
     /**
      * Port number.
      */
-    port: number;
+    port: number | undefined;
 
     /**
      * Returns string representation of the address.
@@ -55,7 +55,7 @@ export class AddressImpl implements Address, IdentifiedDataSerializable {
     // memoization for toString()
     private addrStr: string;
 
-    constructor(host?: string, port?: number) {
+    constructor(host = '', port = 0) {
         this.host = host;
         this.port = port;
         this.type = net.isIP(host);

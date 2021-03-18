@@ -48,13 +48,13 @@ export class ClientAddDistributedObjectListenerCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): UUID {
+    static decodeResponse(clientMessage: ClientMessage): UUID | null {
         const initialFrame = clientMessage.nextFrame();
 
         return FixSizedTypesCodec.decodeUUID(initialFrame.content, RESPONSE_RESPONSE_OFFSET);
     }
 
-    static handle(clientMessage: ClientMessage, handleDistributedObjectEvent: (name: string, serviceName: string, eventType: string, source: UUID) => void = null): void {
+    static handle(clientMessage: ClientMessage, handleDistributedObjectEvent: ((name: string, serviceName: string, eventType: string, source: UUID | null) => void) | null = null): void {
         const messageType = clientMessage.getMessageType();
         if (messageType === EVENT_DISTRIBUTED_OBJECT_MESSAGE_TYPE && handleDistributedObjectEvent !== null) {
             const initialFrame = clientMessage.nextFrame();

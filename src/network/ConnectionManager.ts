@@ -54,8 +54,8 @@ import {ILogger} from '../logging/ILogger';
 import {HeartbeatManager} from './HeartbeatManager';
 import {UuidUtil} from '../util/UuidUtil';
 import {WaitStrategy} from './WaitStrategy';
-import {ConnectionStrategyConfig, ReconnectMode} from '../config/ConnectionStrategyConfig';
-import {ClientConfig, ClientConfigImpl} from '../config/Config';
+import {ConnectionStrategyConfigImpl, ReconnectMode} from '../config/ConnectionStrategyConfig';
+import {ClientConfigImpl} from '../config/Config';
 import {LifecycleState, LifecycleServiceImpl, LifecycleService} from '../LifecycleService';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {BuildInfo} from '../BuildInfo';
@@ -152,7 +152,7 @@ export class ConnectionRegistryImpl implements ConnectionRegistry {
     private readonly reconnectMode: ReconnectMode;
 
     constructor(
-        connectionStrategy: ConnectionStrategyConfig,
+        connectionStrategy: ConnectionStrategyConfigImpl,
         smartRoutingEnabled: boolean,
         loadBalancer: LoadBalancer
     ) {
@@ -310,7 +310,7 @@ export class ConnectionManager extends EventEmitter {
     constructor(
         private readonly client: ClientForConnectionManager,
         private readonly clientName: string,
-        private readonly clientConfig: ClientConfig,
+        private readonly clientConfig: ClientConfigImpl,
         private readonly logger: ILogger,
         private readonly partitionService: PartitionService,
         private readonly serializationService: SerializationService,
@@ -376,7 +376,7 @@ export class ConnectionManager extends EventEmitter {
         // HeartbeatManager should be shut down before connections are closed
         this.heartbeatManager.shutdown();
         this.connectionRegistry.forEachConnection((conn) => {
-            conn.close('Hazelcast client is shutting down', null);
+            conn.close('Hazelcast client is shutting down', new TargetDisconnectedError('Hazelcast client is shutting down'));
         });
 
         this.removeAllListeners(CONNECTION_REMOVED_EVENT_NAME);
@@ -385,7 +385,10 @@ export class ConnectionManager extends EventEmitter {
 
     reset(): void {
         this.connectionRegistry.forEachConnection((conn) => {
-            conn.close(null, new TargetDisconnectedError('Hazelcast client is switching cluster'));
+            conn.close(
+                'Hazelcast client is switching cluster',
+                new TargetDisconnectedError('Hazelcast client is switching cluster')
+            );
         });
     }
 
@@ -466,7 +469,7 @@ export class ConnectionManager extends EventEmitter {
             .catch((err) => {
                 // make sure to close connection on errors
                 if (connection != null) {
-                    connection.close(null, err);
+                    connection.close(`An error occured: ${err.toString()}`, err);
                 }
                 connectionResolver.reject(err);
             });
@@ -684,7 +687,7 @@ export class ConnectionManager extends EventEmitter {
     }
 
     private connect(target: MemberImpl | AddressImpl,
-                    getOrConnectFn: () => Promise<Connection>): Promise<Connection> {
+                    getOrConnectFn: () => Promise<Connection>): Promise<Connection | null> {
         this.logger.info('ConnectionManager', 'Trying to connect to ' + target.toString());
         return getOrConnectFn()
             .catch((err) => {
@@ -725,7 +728,7 @@ export class ConnectionManager extends EventEmitter {
             });
     }
 
-    private getConnectionForAddress(address: AddressImpl): Connection {
+    private getConnectionForAddress(address: AddressImpl): Connection | null {
         for (const connection of this.connectionRegistry.getConnections()) {
             if (connection.getRemoteAddress().equals(address)) {
                 return connection;
@@ -943,20 +946,29 @@ export class ConnectionManager extends EventEmitter {
     private onAuthenticated(connection: Connection,
                             response: ClientAuthenticationResponseParams): Connection {
         this.checkPartitionCount(response.partitionCount);
+        if (response.memberUuid === null) {
+            throw new Error('UUID is null');
+        }
+        if (response.address === null) {
+            throw new Error('Address is null');
+        }
         connection.setConnectedServerVersion(response.serverHazelcastVersion);
         connection.setRemoteAddress(response.address);
         connection.setRemoteUuid(response.memberUuid);
 
         const existingConnection = this.connectionRegistry.getConnection(response.memberUuid);
         if (existingConnection != null) {
-            connection.close('Duplicate connection to same member with uuid: '
-                + response.memberUuid.toString(), null);
+            connection.close(`Duplicate connection to same member with uuid: ${response.memberUuid}`,
+                 new IllegalStateError(`Duplicate connection to same member with uuid: ${response.memberUuid}`));
             return existingConnection;
         }
 
         const newClusterId = response.clusterId;
+        if (newClusterId === null) {
+            throw new Error('Cluster id is null');
+        }
 
-        const clusterIdChanged = this.clusterId != null && !newClusterId.equals(this.clusterId);
+        const clusterIdChanged = this.clusterId !== null && !this.clusterId.equals(newClusterId);
         if (clusterIdChanged) {
             this.checkConnectionStateOnClusterIdChange(connection);
             this.logger.warn('ConnectionManager', 'Switching from current cluster: '
@@ -996,7 +1008,7 @@ export class ConnectionManager extends EventEmitter {
                     this.switchingToNextCluster = false;
                 } else {
                     const reason = 'Force to hard cluster switch';
-                    connection.close(reason, null);
+                    connection.close(reason, new ClientNotAllowedInClusterError(reason));
                     throw new ClientNotAllowedInClusterError(reason);
                 }
             }
@@ -1004,7 +1016,7 @@ export class ConnectionManager extends EventEmitter {
             // If there are other connections, then we have a connection
             // to wrong cluster. We should not stay connected
             const reason = 'Connection does not belong to this cluster';
-            connection.close(reason, null);
+            connection.close(reason, new IllegalStateError(reason));
             throw new IllegalStateError(reason);
         }
     }

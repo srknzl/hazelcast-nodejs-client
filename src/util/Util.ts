@@ -78,7 +78,12 @@ export function getType(obj: any): string {
         if (t !== 'object') {
             return t;
         } else {
-            return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+            const match = ({}).toString.call(obj).match(/\s([a-zA-Z]+)/);
+            if (match && match.length > 1) {
+                return match[1].toLowerCase();
+            } else {
+                return '';
+            }
         }
     }
 }
@@ -125,7 +130,7 @@ export function tryGetString(val: any): string {
 }
 
 /** @internal */
-export function getStringOrUndefined(val: any): string {
+export function getStringOrUndefined(val: any): string | undefined {
     try {
         return tryGetString(val);
     } catch (e) {
@@ -134,7 +139,7 @@ export function getStringOrUndefined(val: any): string {
 }
 
 /** @internal */
-export function getBooleanOrUndefined(val: any): boolean {
+export function getBooleanOrUndefined(val: any): boolean | undefined {
     try {
         return tryGetBoolean(val);
     } catch (e) {

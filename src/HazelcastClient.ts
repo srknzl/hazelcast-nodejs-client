@@ -20,7 +20,7 @@ import {
     DistributedObject,
     DistributedObjectListener,
     LoadBalancer,
-    IllegalStateError
+    IllegalStateError, InvalidConfigurationError
 } from './core';
 import {ClientGetDistributedObjectsCodec} from './codec/ClientGetDistributedObjectsCodec';
 import {ClientConfig, ClientConfigImpl} from './config/Config';
@@ -127,10 +127,12 @@ export class HazelcastClient {
 
     /** @internal */
     constructor(config?: ClientConfigImpl, failoverConfig?: ClientFailoverConfigImpl) {
-        if (config != null) {
+        if (config !== undefined) {
             this.config = config;
-        } else {
+        } else if (failoverConfig !== undefined){
             this.config = failoverConfig.clientConfigs[0];
+        } else {
+            throw new InvalidConfigurationError('No config given');
         }
         this.loadBalancer = this.initLoadBalancer();
         this.connectionRegistry = new ConnectionRegistryImpl(
@@ -254,7 +256,7 @@ export class HazelcastClient {
     static newHazelcastFailoverClient(failoverConfig?: ClientFailoverConfig): Promise<HazelcastClient> {
         const configBuilder = new FailoverConfigBuilder(failoverConfig);
         const effectiveConfig = configBuilder.build();
-        const client = new HazelcastClient(null, effectiveConfig);
+        const client = new HazelcastClient(undefined, effectiveConfig);
         return client.init();
     }
 

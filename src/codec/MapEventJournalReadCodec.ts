@@ -42,13 +42,13 @@ const RESPONSE_NEXT_SEQ_OFFSET = RESPONSE_READ_COUNT_OFFSET + BitsUtil.INT_SIZE_
 export interface MapEventJournalReadResponseParams {
     readCount: number;
     items: Data[];
-    itemSeqs: Long[];
+    itemSeqs: Long[] | null;
     nextSeq: Long;
 }
 
 /** @internal */
 export class MapEventJournalReadCodec {
-    static encodeRequest(name: string, startSequence: Long, minSize: number, maxSize: number, predicate: Data, projection: Data): ClientMessage {
+    static encodeRequest(name: string, startSequence: Long, minSize: number, maxSize: number, predicate: Data | null, projection: Data | null): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
 

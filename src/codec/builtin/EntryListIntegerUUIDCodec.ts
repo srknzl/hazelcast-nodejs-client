@@ -33,10 +33,10 @@ export class EntryListIntegerUUIDCodec {
         clientMessage.addFrame(frame);
     }
 
-    static decode(clientMessage: ClientMessage): Array<[number, UUID]> {
+    static decode(clientMessage: ClientMessage): Array<[number, UUID | null]> {
         const frame = clientMessage.nextFrame();
         const entryCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
-        const result = new Array<[number, UUID]>(entryCount);
+        const result = new Array<[number, UUID | null]>(entryCount);
         for (let i = 0; i < entryCount; i++) {
             const key = FixSizedTypesCodec.decodeInt(frame.content, i * ENTRY_SIZE_IN_BYTES);
             const value = FixSizedTypesCodec.decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES + BitsUtil.INT_SIZE_IN_BYTES);

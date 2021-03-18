@@ -8,6 +8,7 @@
         "strictBindCallApply": true,
         "strictFunctionTypes": true,
         "noImplicitThis": true,
+        "strictNullChecks": true,
         "target": "es2016",
         "outDir": "lib",
         "preserveConstEnums": true,

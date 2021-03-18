@@ -78,7 +78,7 @@ export class ClusterService implements Cluster {
      * @param uuid The UUID of the member.
      * @return The member that was found, or undefined if not found.
      */
-    getMember(uuid: UUID): MemberImpl {
+    getMember(uuid: UUID): MemberImpl | undefined {
         assertNotNull(uuid);
         return this.memberListSnapshot.members.get(uuid.toString());
     }
@@ -239,11 +239,13 @@ export class ClusterService implements Cluster {
 
         // removal events should be added before added events
         deadMembers.forEach((member) => {
+            if (member.uuid === null) return;
             events[index++] = new MembershipEvent(member, MemberEvent.REMOVED, currentMembers);
-            const connection: Connection = connectionRegistry.getConnection(member.uuid);
-            if (connection != null) {
-                connection.close(null, new TargetDisconnectedError('The client has closed the connection to this '
-                    + 'member, after receiving a member left event from the cluster ' + connection));
+            const connection: Connection | undefined = connectionRegistry.getConnection(member.uuid);
+            if (connection !== undefined) {
+                const errorString = 'The client has closed the connection to this '
+                    + 'member, after receiving a member left event from the cluster ' + connection.toString();
+                connection.close(errorString, new TargetDisconnectedError(errorString));
             }
         });
 
@@ -266,7 +268,7 @@ export class ClusterService implements Cluster {
         for (const memberInfo of memberInfos) {
             const member = new MemberImpl(memberInfo.address, memberInfo.uuid, memberInfo.attributes,
                 memberInfo.liteMember, memberInfo.version, memberInfo.addressMap);
-            newMembers.set(memberInfo.uuid.toString(), member);
+            newMembers.set(UUID.getString(memberInfo.uuid), member);
             newMemberList[index++] = member;
         }
         return new MemberListSnapshot(memberListVersion, newMembers, newMemberList);

@@ -31,7 +31,7 @@ const RESPONSE_RESPONSE_OFFSET = RESPONSE_BACKUP_ACKS_OFFSET + BitsUtil.BYTE_SIZ
 
 /** @internal */
 export class ClientRemoveMigrationListenerCodec {
-    static encodeRequest(registrationId: UUID): ClientMessage {
+    static encodeRequest(registrationId: UUID | null): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
 

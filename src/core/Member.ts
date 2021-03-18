@@ -29,7 +29,7 @@ export interface Member {
     /**
      * Unique id of the member in a cluster.
      */
-    uuid: UUID;
+    uuid: UUID | null;
 
     /**
      * Lite member flag.
@@ -47,14 +47,14 @@ export interface Member {
 export class MemberImpl implements Member {
 
     readonly address: AddressImpl;
-    readonly uuid: UUID;
+    readonly uuid: UUID | null;
     readonly liteMember: boolean;
     readonly attributes: Map<string, string>;
     readonly version: MemberVersion;
     readonly addressMap: Map<EndpointQualifier, AddressImpl>;
 
     constructor(address: AddressImpl,
-                uuid: UUID,
+                uuid: UUID | null,
                 attributes: Map<string, string>,
                 liteMember: boolean,
                 version: MemberVersion,
@@ -83,7 +83,7 @@ export class MemberImpl implements Member {
         + ']:'
         + this.address.port
         + ' - '
-        + this.uuid.toString();
+        + UUID.getString(this.uuid);
         if (this.liteMember) {
             memberStr += ' lite';
         }
@@ -93,7 +93,7 @@ export class MemberImpl implements Member {
     id(): string {
         let id = this.address.toString();
         if (this.uuid) {
-            id += this.uuid.toString();
+            id += UUID.getString(this.uuid);
         }
         return id;
     }

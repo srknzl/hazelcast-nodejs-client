@@ -28,11 +28,11 @@ import {
     Frame,
     SIZE_OF_FRAME_LENGTH_AND_FLAGS
 } from '../protocol/ClientMessage';
-import {ClientConfig} from '../config';
+import {ClientConfigImpl} from '../config';
 import {ConnectionManager} from './ConnectionManager';
 import {LifecycleService} from '../LifecycleService';
 
-const FROZEN_ARRAY = Object.freeze([]) as OutputQueueItem[];
+const FROZEN_ARRAY = Object.freeze([]) as unknown as OutputQueueItem[];
 const PROPERTY_PIPELINING_ENABLED = 'hazelcast.client.autopipelining.enabled';
 const PROPERTY_PIPELINING_THRESHOLD = 'hazelcast.client.autopipelining.threshold.bytes';
 const PROPERTY_NO_DELAY = 'hazelcast.client.socket.no.delay';
@@ -204,17 +204,17 @@ export class ClientMessageReader {
     private chunksTotalSize = 0;
     private frameSize = 0;
     private flags = 0;
-    private clientMessage: ClientMessage = null;
+    private clientMessage: ClientMessage | null = null;
 
     append(buffer: Buffer): void {
         this.chunksTotalSize += buffer.length;
         this.chunks.push(buffer);
     }
 
-    read(): ClientMessage {
+    read(): ClientMessage | null {
         for (;;) {
             if (this.readFrame()) {
-                if (this.clientMessage.endFrame.isFinalFrame()) {
+                if (this.clientMessage && this.clientMessage.endFrame.isFinalFrame()) {
                     const message = this.clientMessage;
                     this.reset();
                     return message;
@@ -332,7 +332,7 @@ export class Connection {
 
     constructor(
         private readonly connectionManager: ConnectionManager,
-        clientConfig: ClientConfig,
+        clientConfig: ClientConfigImpl,
         private readonly logger: ILogger,
         private remoteAddress: AddressImpl,
         private readonly socket: net.Socket,

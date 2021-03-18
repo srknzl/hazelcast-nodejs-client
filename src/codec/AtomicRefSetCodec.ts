@@ -35,7 +35,7 @@ const REQUEST_INITIAL_FRAME_SIZE = REQUEST_RETURN_OLD_VALUE_OFFSET + BitsUtil.BO
 
 /** @internal */
 export class AtomicRefSetCodec {
-    static encodeRequest(groupId: RaftGroupId, name: string, newValue: Data, returnOldValue: boolean): ClientMessage {
+    static encodeRequest(groupId: RaftGroupId, name: string, newValue: Data | null, returnOldValue: boolean): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
 
@@ -51,7 +51,7 @@ export class AtomicRefSetCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): Data {
+    static decodeResponse(clientMessage: ClientMessage): Data | null {
         // empty initial frame
         clientMessage.nextFrame();
 

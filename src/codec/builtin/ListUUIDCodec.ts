@@ -30,10 +30,10 @@ export class ListUUIDCodec {
         clientMessage.addFrame(frame);
     }
 
-    static decode(clientMessage: ClientMessage): UUID[] {
+    static decode(clientMessage: ClientMessage): (UUID | null)[] {
         const frame = clientMessage.nextFrame();
         const itemCount = frame.content.length / BitsUtil.UUID_SIZE_IN_BYTES;
-        const result = new Array<UUID>(itemCount);
+        const result = new Array<(UUID | null)>(itemCount);
         for (let i = 0; i < itemCount; i++) {
             result[i] = FixSizedTypesCodec.decodeUUID(frame.content, i * BitsUtil.UUID_SIZE_IN_BYTES);
         }

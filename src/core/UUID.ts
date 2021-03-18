@@ -37,12 +37,17 @@ export class UUID {
         this.leastSignificant = leastSig;
     }
 
-    equals(other: UUID): boolean {
-        if (other == null) {
+    equals(other: UUID | null): boolean {
+        if (other === null) {
             return false;
         }
         return other.mostSignificant.equals(this.mostSignificant)
             && other.leastSignificant.equals(this.leastSignificant);
+    }
+
+    static getString(uuid: UUID | null) : string {
+        if (uuid !== null) return uuid.toString();
+        else return 'NULL';
     }
 
     static isUUID(obj: any) {

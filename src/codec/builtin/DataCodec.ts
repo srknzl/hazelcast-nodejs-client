@@ -25,7 +25,7 @@ export class DataCodec {
         clientMessage.addFrame(new Frame(data.toBuffer()));
     }
 
-    static encodeNullable(clientMessage: ClientMessage, data: Data): void {
+    static encodeNullable(clientMessage: ClientMessage, data: Data | null): void {
         if (data === null) {
             clientMessage.addFrame(NULL_FRAME.copy());
         } else {
@@ -37,7 +37,7 @@ export class DataCodec {
         return new HeapData(clientMessage.nextFrame().content);
     }
 
-    static decodeNullable(clientMessage: ClientMessage): Data {
+    static decodeNullable(clientMessage: ClientMessage): Data | null {
         return CodecUtil.nextFrameIsNullFrame(clientMessage) ? null : this.decode(clientMessage);
     }
 }

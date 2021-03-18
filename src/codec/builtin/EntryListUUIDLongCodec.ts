@@ -24,7 +24,7 @@ const ENTRY_SIZE_IN_BYTES = BitsUtil.UUID_SIZE_IN_BYTES + BitsUtil.LONG_SIZE_IN_
 
 /** @internal */
 export class EntryListUUIDLongCodec {
-    static encode(clientMessage: ClientMessage, entries: Array<[UUID, Long]>): void {
+    static encode(clientMessage: ClientMessage, entries: Array<[(UUID | null), Long]>): void {
         const entryCount = entries.length;
         const frame = new Frame(Buffer.allocUnsafe(entryCount * ENTRY_SIZE_IN_BYTES));
         for (let i = 0; i < entryCount; i++) {
@@ -34,10 +34,10 @@ export class EntryListUUIDLongCodec {
         clientMessage.addFrame(frame);
     }
 
-    static decode(clientMessage: ClientMessage): Array<[UUID, Long]> {
+    static decode(clientMessage: ClientMessage): Array<[UUID | null, Long]> {
         const frame = clientMessage.nextFrame();
         const entryCount = frame.content.length / ENTRY_SIZE_IN_BYTES;
-        const result = new Array<[UUID, Long]>(entryCount);
+        const result = new Array<[UUID | null, Long]>(entryCount);
         for (let i = 0; i < entryCount; i++) {
             const key = FixSizedTypesCodec.decodeUUID(frame.content, i * ENTRY_SIZE_IN_BYTES);
             const value = FixSizedTypesCodec.decodeLong(frame.content, i * ENTRY_SIZE_IN_BYTES + BitsUtil.UUID_SIZE_IN_BYTES);

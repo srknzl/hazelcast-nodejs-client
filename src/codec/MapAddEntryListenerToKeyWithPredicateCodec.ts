@@ -60,13 +60,13 @@ export class MapAddEntryListenerToKeyWithPredicateCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): UUID {
+    static decodeResponse(clientMessage: ClientMessage): UUID | null {
         const initialFrame = clientMessage.nextFrame();
 
         return FixSizedTypesCodec.decodeUUID(initialFrame.content, RESPONSE_RESPONSE_OFFSET);
     }
 
-    static handle(clientMessage: ClientMessage, handleEntryEvent: (key: Data, value: Data, oldValue: Data, mergingValue: Data, eventType: number, uuid: UUID, numberOfAffectedEntries: number) => void = null): void {
+    static handle(clientMessage: ClientMessage, handleEntryEvent: ((key: Data | null, value: Data | null, oldValue: Data | null, mergingValue: Data | null, eventType: number, uuid: UUID | null, numberOfAffectedEntries: number) => void) | null = null): void {
         const messageType = clientMessage.getMessageType();
         if (messageType === EVENT_ENTRY_MESSAGE_TYPE && handleEntryEvent !== null) {
             const initialFrame = clientMessage.nextFrame();

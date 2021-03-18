@@ -181,7 +181,7 @@ export class SerializationServiceV1 implements SerializationService {
         if (obj === undefined) {
             throw new RangeError('undefined cannot be serialized.');
         }
-        let serializer: Serializer = null;
+        let serializer: Serializer | null = null;
         if (obj === null) {
             serializer = this.findSerializerByName('null', false);
         }
@@ -204,8 +204,8 @@ export class SerializationServiceV1 implements SerializationService {
 
     }
 
-    protected lookupDefaultSerializer(obj: any): Serializer {
-        let serializer: Serializer = null;
+    protected lookupDefaultSerializer(obj: any): Serializer | null {
+        let serializer: Serializer | null = null;
         if (this.isIdentifiedDataSerializable(obj)) {
             return this.findSerializerByName('identified', false);
         }
@@ -219,20 +219,21 @@ export class SerializationServiceV1 implements SerializationService {
             } else {
                 serializer = this.findSerializerByName(Util.getType(obj[0]), true);
             }
-        } else {
+        }
+        else {
             serializer = this.findSerializerByName(objectType, false);
         }
         return serializer;
     }
 
-    protected lookupCustomSerializer(obj: any): Serializer {
+    protected lookupCustomSerializer(obj: any): Serializer | null {
         if (this.isCustomSerializable(obj)) {
             return this.findSerializerById(obj.hzCustomId);
         }
         return null;
     }
 
-    protected lookupGlobalSerializer(): Serializer {
+    protected lookupGlobalSerializer(): Serializer | null {
         return this.findSerializerByName('!global', false);
     }
 
@@ -332,7 +333,7 @@ export class SerializationServiceV1 implements SerializationService {
         return (typeof object[prop] === 'number' && object[prop] >= 1);
     }
 
-    protected findSerializerByName(name: string, isArray: boolean): Serializer {
+    protected findSerializerByName(name: string, isArray: boolean): Serializer | null {
         let convertedName: string;
         if (name === 'number') {
             convertedName = this.serializationConfig.defaultNumberType;

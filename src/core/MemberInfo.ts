@@ -25,25 +25,25 @@ import {EndpointQualifier, ProtocolType} from './EndpointQualifier';
 export class MemberInfo {
 
     readonly address: AddressImpl;
-    readonly uuid: UUID;
+    readonly uuid: UUID | null;
     readonly liteMember: boolean;
     readonly attributes: Map<string, string>;
     readonly version: MemberVersion;
     readonly addressMap: Map<EndpointQualifier, AddressImpl>;
 
     constructor(address: AddressImpl,
-                uuid: UUID,
+                uuid: UUID | null,
                 attributes: Map<string, string>,
                 liteMember: boolean,
                 version: MemberVersion,
                 isAddressMapExists: boolean,
-                addressMap: Map<EndpointQualifier, AddressImpl>) {
+                addressMap: Map<EndpointQualifier, AddressImpl> | null) {
         this.address = address;
         this.uuid = uuid;
         this.attributes = attributes;
         this.liteMember = liteMember;
         this.version = version;
-        if (isAddressMapExists) {
+        if (addressMap !== null) {
             this.addressMap = addressMap;
         } else {
             this.addressMap = new Map();
@@ -57,11 +57,11 @@ export class MemberInfo {
         if (!this.address.equals(other.address)) {
             return false;
         }
-        return this.uuid != null ? this.uuid.equals(other.uuid) : other.uuid === null;
+        return this.uuid != null && other.uuid != null ? this.uuid.equals(other.uuid) : other.uuid === null;
     }
 
     toString(): string {
-        return 'Member[uuid: ' + this.uuid.toString()
+        return 'Member[uuid: ' + UUID.getString(this.uuid)
             + ', address: ' + this.address.toString()
             + ', liteMember: ' + this.liteMember
             + ', memberListJoinVersion' + this.version + ']';
@@ -74,7 +74,7 @@ export class MemberInfo {
  * @returns found address or `null`
  * @internal
  */
-export function lookupPublicAddress(member: MemberInfo | MemberImpl): AddressImpl {
+export function lookupPublicAddress(member: MemberInfo | MemberImpl): AddressImpl | null {
     for (const [qualifier, address] of member.addressMap.entries()) {
         if (qualifier.type === ProtocolType.CLIENT && qualifier.identifier === 'public') {
             return address;

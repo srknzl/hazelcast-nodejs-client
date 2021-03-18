@@ -39,7 +39,7 @@ export interface ServerErrorStackElement {
     /**
      * Name of the file containing the class.
      */
-    fileName: string;
+    fileName: string | null;
 
     /**
      * Line number from the class.
@@ -56,7 +56,7 @@ export class HazelcastError extends Error {
     /**
      * Cause of this exception.
      */
-    cause: Error;
+    cause: Error | undefined;
 
     /**
      * Server-side stack trace.

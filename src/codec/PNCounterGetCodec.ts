@@ -36,13 +36,13 @@ const RESPONSE_REPLICA_COUNT_OFFSET = RESPONSE_VALUE_OFFSET + BitsUtil.LONG_SIZE
 /** @internal */
 export interface PNCounterGetResponseParams {
     value: Long;
-    replicaTimestamps: Array<[UUID, Long]>;
+    replicaTimestamps: Array<[(UUID | null), Long]>;
     replicaCount: number;
 }
 
 /** @internal */
 export class PNCounterGetCodec {
-    static encodeRequest(name: string, replicaTimestamps: Array<[UUID, Long]>, targetReplicaUUID: UUID): ClientMessage {
+    static encodeRequest(name: string, replicaTimestamps: Array<[(UUID | null), Long]>, targetReplicaUUID: UUID | null): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
 

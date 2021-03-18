@@ -117,16 +117,16 @@ export class TranslateAddressProvider {
                 return resolveAddress(address).catch(() => null);
             });
 
-        let addressesFromConfig: string[];
+        let addressesFromConfig: (string | null)[];
         return Promise.all(pHostsFromConfig)
-            .then((addresses: string[]) => {
+            .then((addresses: (string | null)[]) => {
                 addressesFromConfig = addresses;
                 const memberHostPromises = members
                     .map((member) => {
                         return resolveAddress(member.address.host).catch(() => null);
                     });
                 return Promise.all(memberHostPromises);
-            }).then((addressesFromMembers: string[]) => {
+            }).then((addressesFromMembers: (string | null)[]) => {
                 for (const address of addressesFromMembers) {
                     if (addressesFromConfig.includes(address)) {
                         return true;
@@ -156,8 +156,14 @@ export class TranslateAddressProvider {
         const member = shuffledMembers[0];
         const publicAddress = lookupPublicAddress(member);
         if (publicAddress == null) {
+            let uuidString;
+            if (member.uuid === null) {
+                uuidString = 'NULL';
+            } else {
+                uuidString = member.uuid.toString();
+            }
             this.logger.debug('TranslateAddressProvider', 'Public address is not available '
-                + 'on member ' + member.uuid.toString() + '. Client will use internal addresses.');
+                + 'on member ' + uuidString + '. Client will use internal addresses.');
             return Promise.resolve(false);
         }
         const internalAddress = member.address;

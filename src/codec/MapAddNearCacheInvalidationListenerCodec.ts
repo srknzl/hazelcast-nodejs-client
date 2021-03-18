@@ -62,13 +62,13 @@ export class MapAddNearCacheInvalidationListenerCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): UUID {
+    static decodeResponse(clientMessage: ClientMessage): UUID | null {
         const initialFrame = clientMessage.nextFrame();
 
         return FixSizedTypesCodec.decodeUUID(initialFrame.content, RESPONSE_RESPONSE_OFFSET);
     }
 
-    static handle(clientMessage: ClientMessage, handleIMapInvalidationEvent: (key: Data, sourceUuid: UUID, partitionUuid: UUID, sequence: Long) => void = null, handleIMapBatchInvalidationEvent: (keys: Data[], sourceUuids: UUID[], partitionUuids: UUID[], sequences: Long[]) => void = null): void {
+    static handle(clientMessage: ClientMessage, handleIMapInvalidationEvent: ((key: Data | null, sourceUuid: UUID | null, partitionUuid: UUID | null, sequence: Long) => void) | null = null, handleIMapBatchInvalidationEvent: ((keys: Data[], sourceUuids: (UUID | null)[], partitionUuids: (UUID | null)[], sequences: Long[]) => void) | null = null): void {
         const messageType = clientMessage.getMessageType();
         if (messageType === EVENT_I_MAP_INVALIDATION_MESSAGE_TYPE && handleIMapInvalidationEvent !== null) {
             const initialFrame = clientMessage.nextFrame();

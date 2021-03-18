@@ -109,10 +109,10 @@ export class FixSizedTypesCodec {
         return buffer.readUInt8(offset);
     }
 
-    static encodeUUID(buffer: Buffer, offset: number, value: UUID): void {
+    static encodeUUID(buffer: Buffer, offset: number, value: UUID | null): void {
         const isNull = value === null;
         this.encodeBoolean(buffer, offset, isNull);
-        if (isNull) {
+        if (value === null) {
             return;
         }
         const mostSignificantBits = value.mostSignificant;
@@ -121,7 +121,7 @@ export class FixSizedTypesCodec {
         this.encodeLong(buffer, offset + BitsUtil.BOOLEAN_SIZE_IN_BYTES + BitsUtil.LONG_SIZE_IN_BYTES, leastSignificantBits);
     }
 
-    static decodeUUID(buffer: Buffer, offset: number): UUID {
+    static decodeUUID(buffer: Buffer, offset: number): UUID | null {
         const isNull = this.decodeBoolean(buffer, offset);
         if (isNull) {
             return null;

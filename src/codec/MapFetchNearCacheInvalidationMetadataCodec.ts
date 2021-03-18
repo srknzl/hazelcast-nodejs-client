@@ -37,12 +37,12 @@ const REQUEST_INITIAL_FRAME_SIZE = REQUEST_UUID_OFFSET + BitsUtil.UUID_SIZE_IN_B
 /** @internal */
 export interface MapFetchNearCacheInvalidationMetadataResponseParams {
     namePartitionSequenceList: Array<[string, Array<[number, Long]>]>;
-    partitionUuidList: Array<[number, UUID]>;
+    partitionUuidList: Array<[number, (UUID | null)]>;
 }
 
 /** @internal */
 export class MapFetchNearCacheInvalidationMetadataCodec {
-    static encodeRequest(names: string[], uuid: UUID): ClientMessage {
+    static encodeRequest(names: string[], uuid: UUID | null): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
 

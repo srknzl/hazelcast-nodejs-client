@@ -53,8 +53,7 @@ function exit() {
         if (err) return deferred.reject(err);
         return deferred.resolve(res);
     });
-    return deferred.promise;
-}
+    return deferred.promise;}
 
 function shutdownMember(clusterId, memberUuid) {
     const deferred = deferredPromise();

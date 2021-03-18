@@ -129,7 +129,7 @@ export interface ClientConfig {
     /**
      * Custom logger implementation for the client.
      */
-    customLogger?: ILogger;
+    customLogger?: ILogger | null;
 
     /**
      * Custom credentials to be used as a part of authentication on
@@ -183,7 +183,7 @@ export class ClientConfigImpl implements ClientConfig {
 
     instanceName: string;
     network = new ClientNetworkConfigImpl();
-    customLogger: ILogger = null;
+    customLogger: ILogger | null = null;
     customCredentials: any = null;
     lifecycleListeners: Array<(state: LifecycleState) => void> = [];
     membershipListeners: MembershipListener[] = [];
@@ -215,7 +215,7 @@ export class ClientConfigImpl implements ClientConfig {
         return config;
     }
 
-    getNearCacheConfig(name: string): NearCacheConfigImpl {
+    getNearCacheConfig(name: string): NearCacheConfigImpl | null {
         const matching = this.lookupByPattern<NearCacheConfigImpl>(this.nearCaches, name);
         if (matching == null) {
             return null;
@@ -226,7 +226,7 @@ export class ClientConfigImpl implements ClientConfig {
     }
 
     getFlakeIdGeneratorConfig(name: string): FlakeIdGeneratorConfigImpl {
-        const matching: FlakeIdGeneratorConfigImpl =
+        const matching: FlakeIdGeneratorConfigImpl | null =
             this.lookupByPattern<FlakeIdGeneratorConfigImpl>(this.flakeIdGenerators, name);
         let config: FlakeIdGeneratorConfigImpl;
         if (matching != null) {
@@ -238,7 +238,7 @@ export class ClientConfigImpl implements ClientConfig {
         return config;
     }
 
-    private lookupByPattern<T>(config: { [pattern: string]: any }, name: string): T {
+    private lookupByPattern<T>(config: { [pattern: string]: any }, name: string): T | null {
         if (config[name] != null) {
             return config[name];
         }

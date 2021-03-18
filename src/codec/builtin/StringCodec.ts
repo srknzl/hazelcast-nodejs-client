@@ -14,12 +14,20 @@
  * limitations under the License.
  */
 
-import {ClientMessage, Frame} from '../../protocol/ClientMessage';
+import {ClientMessage, Frame, NULL_FRAME} from '../../protocol/ClientMessage';
 
 /** @internal */
 export class StringCodec {
     static encode(clientMessage: ClientMessage, value: string): void {
         clientMessage.addFrame(new Frame(Buffer.from(value, 'utf8')));
+    }
+
+    static encodeNullable(clientMessage: ClientMessage, value: string | null): void {
+        if (value === null) {
+            clientMessage.addFrame(NULL_FRAME.copy());
+        } else {
+            clientMessage.addFrame(new Frame(Buffer.from(value, 'utf8')));
+        }
     }
 
     static decode(clientMessage: ClientMessage): string {

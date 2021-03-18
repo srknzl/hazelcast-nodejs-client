@@ -34,11 +34,11 @@ export class EntryListUUIDListIntegerCodec {
         ListUUIDCodec.encode(clientMessage, keys);
     }
 
-    static decode(clientMessage: ClientMessage): Array<[UUID, number[]]> {
+    static decode(clientMessage: ClientMessage): Array<[(UUID | null), number[]]> {
         const values = ListMultiFrameCodec.decode(clientMessage, ListIntegerCodec.decode);
         const keys = ListUUIDCodec.decode(clientMessage);
 
-        const result = new Array<[UUID, number[]]>(keys.length);
+        const result = new Array<[(UUID | null), number[]]>(keys.length);
         for (let i = 0; i < result.length; i++) {
             result[i] = [keys[i], values[i]];
         }

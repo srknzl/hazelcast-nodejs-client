@@ -49,13 +49,13 @@ export class ClientAddPartitionLostListenerCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): UUID {
+    static decodeResponse(clientMessage: ClientMessage): UUID | null {
         const initialFrame = clientMessage.nextFrame();
 
         return FixSizedTypesCodec.decodeUUID(initialFrame.content, RESPONSE_RESPONSE_OFFSET);
     }
 
-    static handle(clientMessage: ClientMessage, handlePartitionLostEvent: (partitionId: number, lostBackupCount: number, source: UUID) => void = null): void {
+    static handle(clientMessage: ClientMessage, handlePartitionLostEvent: ((partitionId: number, lostBackupCount: number, source: UUID | null | null) => void) | null = null): void {
         const messageType = clientMessage.getMessageType();
         if (messageType === EVENT_PARTITION_LOST_MESSAGE_TYPE && handlePartitionLostEvent !== null) {
             const initialFrame = clientMessage.nextFrame();

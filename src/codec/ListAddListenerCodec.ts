@@ -55,13 +55,13 @@ export class ListAddListenerCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): UUID {
+    static decodeResponse(clientMessage: ClientMessage): UUID | null {
         const initialFrame = clientMessage.nextFrame();
 
         return FixSizedTypesCodec.decodeUUID(initialFrame.content, RESPONSE_RESPONSE_OFFSET);
     }
 
-    static handle(clientMessage: ClientMessage, handleItemEvent: (item: Data, uuid: UUID, eventType: number) => void = null): void {
+    static handle(clientMessage: ClientMessage, handleItemEvent: ((item: Data | null, uuid: UUID | null, eventType: number) => void) | null = null): void {
         const messageType = clientMessage.getMessageType();
         if (messageType === EVENT_ITEM_MESSAGE_TYPE && handleItemEvent !== null) {
             const initialFrame = clientMessage.nextFrame();

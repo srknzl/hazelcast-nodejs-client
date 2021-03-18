@@ -53,13 +53,13 @@ export class TopicAddMessageListenerCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): UUID {
+    static decodeResponse(clientMessage: ClientMessage): UUID | null {
         const initialFrame = clientMessage.nextFrame();
 
         return FixSizedTypesCodec.decodeUUID(initialFrame.content, RESPONSE_RESPONSE_OFFSET);
     }
 
-    static handle(clientMessage: ClientMessage, handleTopicEvent: (item: Data, publishTime: Long, uuid: UUID) => void = null): void {
+    static handle(clientMessage: ClientMessage, handleTopicEvent: ((item: Data, publishTime: Long, uuid: UUID | null) => void) | null = null): void {
         const messageType = clientMessage.getMessageType();
         if (messageType === EVENT_TOPIC_MESSAGE_TYPE && handleTopicEvent !== null) {
             const initialFrame = clientMessage.nextFrame();

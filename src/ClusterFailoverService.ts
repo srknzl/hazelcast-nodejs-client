@@ -139,7 +139,7 @@ export class ClusterFailoverServiceBuilder {
         return new DefaultAddressProvider(networkConfig);
     }
 
-    private initCloudAddressProvider(config: ClientConfigImpl): HazelcastCloudAddressProvider {
+    private initCloudAddressProvider(config: ClientConfigImpl): HazelcastCloudAddressProvider | null {
         const cloudConfig = config.network.hazelcastCloud;
         const discoveryToken = cloudConfig.discoveryToken;
         if (discoveryToken != null) {

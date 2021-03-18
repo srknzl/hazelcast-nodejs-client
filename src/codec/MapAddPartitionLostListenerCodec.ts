@@ -50,13 +50,13 @@ export class MapAddPartitionLostListenerCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): UUID {
+    static decodeResponse(clientMessage: ClientMessage): UUID | null {
         const initialFrame = clientMessage.nextFrame();
 
         return FixSizedTypesCodec.decodeUUID(initialFrame.content, RESPONSE_RESPONSE_OFFSET);
     }
 
-    static handle(clientMessage: ClientMessage, handleMapPartitionLostEvent: (partitionId: number, uuid: UUID) => void = null): void {
+    static handle(clientMessage: ClientMessage, handleMapPartitionLostEvent: ((partitionId: number, uuid: UUID | null) => void) | null = null): void {
         const messageType = clientMessage.getMessageType();
         if (messageType === EVENT_MAP_PARTITION_LOST_MESSAGE_TYPE && handleMapPartitionLostEvent !== null) {
             const initialFrame = clientMessage.nextFrame();
