@@ -108,7 +108,7 @@ export class DefaultPortableReader implements PortableReader {
         return this.input.readShort(pos);
     }
 
-    readPortable(fieldName: string): Portable {
+    readPortable(fieldName: string): Portable | null {
         const backupPos = this.input.position();
         try {
             const pos = this.positionByField(fieldName, FieldType.PORTABLE);
@@ -175,7 +175,7 @@ export class DefaultPortableReader implements PortableReader {
         return this.input.readStringArray(pos);
     }
 
-    readPortableArray(fieldName: string): Portable[] {
+    readPortableArray(fieldName: string): Portable[] | null {
         const backupPos = this.input.position();
         try {
             const pos = this.positionByField(fieldName, FieldType.PORTABLE_ARRAY);

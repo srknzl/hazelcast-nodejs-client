@@ -78,12 +78,13 @@ export interface IdentifiedDataSerializable {
 /**
  * Factory function for {@link IdentifiedDataSerializable}. Should return
  * an instance of the right {@link IdentifiedDataSerializable} object, given
- * the matching `classId`.
+ * the matching `classId`, null is returned otherwise. For some factories an
+ * error is thrown in case of a classId mismatch.
  *
  * @param classId class id
  * @returns object for further initialization
  */
-export type IdentifiedDataSerializableFactory = (classId: number) => IdentifiedDataSerializable;
+export type IdentifiedDataSerializableFactory = (classId: number) => IdentifiedDataSerializable | null;
 
 /**
  * Interface for objects with custom serialization support.

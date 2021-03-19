@@ -136,7 +136,7 @@ export interface PortableReader {
 
     readShort(fieldName: string): number;
 
-    readPortable(fieldName: string): Portable;
+    readPortable(fieldName: string): Portable | null;
 
     readByteArray(fieldName: string): Buffer;
 
@@ -161,7 +161,7 @@ export interface PortableReader {
 
     readStringArray(fieldName: string): string[];
 
-    readPortableArray(fieldName: string): Portable[];
+    readPortableArray(fieldName: string): Portable[] | null;
 }
 
 /**

@@ -34,7 +34,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
     readInt(fieldName: string): number {
         const fieldDef = this.classDefinition.getField(fieldName);
         if (fieldDef == null) {
-            return undefined;
+            return 0;
         }
         switch (fieldDef.getType()) {
             case FieldType.INT:
@@ -53,7 +53,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
     readLong(fieldName: string): Long {
         const fieldDef = this.classDefinition.getField(fieldName);
         if (fieldDef == null) {
-            return undefined;
+            return Long.ZERO;
         }
         switch (fieldDef.getType()) {
             case FieldType.LONG:
@@ -74,7 +74,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
     readDouble(fieldName: string): number {
         const fieldDef = this.classDefinition.getField(fieldName);
         if (fieldDef == null) {
-            return undefined;
+            return 0;
         }
         switch (fieldDef.getType()) {
             case FieldType.DOUBLE:
@@ -99,7 +99,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
     readFloat(fieldName: string): number {
         const fieldDef = this.classDefinition.getField(fieldName);
         if (fieldDef == null) {
-            return undefined;
+            return 0;
         }
         switch (fieldDef.getType()) {
             case FieldType.FLOAT:
@@ -120,7 +120,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
     readShort(fieldName: string): number {
         const fieldDef = this.classDefinition.getField(fieldName);
         if (fieldDef == null) {
-            return undefined;
+            return 0;
         }
         switch (fieldDef.getType()) {
             case FieldType.BYTE:

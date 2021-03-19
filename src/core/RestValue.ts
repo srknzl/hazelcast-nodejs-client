@@ -54,7 +54,7 @@ export class RestValue implements IdentifiedDataSerializable {
 }
 
 /** @internal */
-export function restValueFactory(classId: number): IdentifiedDataSerializable {
+export function restValueFactory(classId: number): IdentifiedDataSerializable | null {
     if (classId === REST_VALUE_CLASS_ID) {
         return new RestValue();
     }

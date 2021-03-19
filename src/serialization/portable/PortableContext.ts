@@ -38,7 +38,7 @@ export class PortableContext {
         return this.version;
     }
 
-    readClassDefinitionFromInput(input: DataInput, factoryId: number, classId: number, version: number): ClassDefinition {
+    readClassDefinitionFromInput(input: DataInput, factoryId: number, classId: number, version: number): ClassDefinition | null {
         let register = true;
         const builder = new ClassDefinitionBuilder(factoryId, classId, version);
         input.readInt();
@@ -90,7 +90,7 @@ export class PortableContext {
             }
             builder.addField(new FieldDefinition(i, name, type, fieldVersion, fieldFactoryId, fieldClassId));
         }
-        let classDefinition = builder.build();
+        let classDefinition: ClassDefinition = builder.build();
         if (register) {
             classDefinition = this.registerClassDefinition(classDefinition);
         }
@@ -109,7 +109,7 @@ export class PortableContext {
         return cd;
     }
 
-    lookupClassDefinition(factoryId: number, classId: number, version: number): ClassDefinition {
+    lookupClassDefinition(factoryId: number, classId: number, version: number): ClassDefinition | null {
         const factory = this.classDefContext[factoryId];
         if (factory == null) {
             return null;
@@ -127,11 +127,11 @@ export class PortableContext {
     }
 
     getClassVersion(portable: VersionedPortable | Portable): number {
-        if (typeof (portable as VersionedPortable).version === 'number') {
-            if ((portable as VersionedPortable).version < 0) {
+        if ('version' in portable) {
+            if (portable.version < 0) {
                 throw new RangeError('Version cannot be negative!');
             }
-            return (portable as VersionedPortable).version;
+            return portable.version;
         } else {
             return this.version;
         }

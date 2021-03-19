@@ -88,7 +88,7 @@ import {IMap} from './IMap';
 import {EntryEvent} from './EntryListener';
 import {UUID} from '../core/UUID';
 import {ClientMessage} from '../protocol/ClientMessage';
-import {IndexConfig} from '../config/IndexConfig';
+import {InternalIndexConfig} from '../config/IndexConfig';
 import {IndexUtil} from '../util/IndexUtil';
 import {PagingPredicateHolder} from '../protocol/PagingPredicateHolder';
 import {MapEntriesWithPagingPredicateCodec} from '../codec/MapEntriesWithPagingPredicateCodec';
@@ -469,7 +469,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             });
     }
 
-    addIndex(indexConfig: IndexConfig): Promise<void> {
+    addIndex(indexConfig: InternalIndexConfig): Promise<void> {
         assertNotNull(indexConfig);
         const normalizedConfig = IndexUtil.validateAndNormalize(this.name, indexConfig);
         return this.encodeInvokeOnRandomTarget(MapAddIndexCodec, normalizedConfig).then(() => {

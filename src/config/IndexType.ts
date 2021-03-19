@@ -35,3 +35,5 @@ export enum IndexType {
     BITMAP = 2,
 
 }
+
+export type IndexTypeStrings = keyof typeof IndexType;

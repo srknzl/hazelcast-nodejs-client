@@ -210,7 +210,7 @@ export class MetricsCompressor {
         return mask;
     }
 
-    private getDictionaryId(word: string): number {
+    private getDictionaryId(word: string | undefined): number {
         if (word === undefined) {
             return NULL_DICTIONARY_ID;
         }

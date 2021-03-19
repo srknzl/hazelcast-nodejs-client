@@ -48,7 +48,7 @@ export class ReliableTopicMessage implements IdentifiedDataSerializable {
 }
 
 /** @internal */
-export function reliableTopicMessageFactory(classId: number): IdentifiedDataSerializable {
+export function reliableTopicMessageFactory(classId: number): IdentifiedDataSerializable | null {
     if (classId === RELIABLE_TOPIC_CLASS_ID) {
         return new ReliableTopicMessage();
     }

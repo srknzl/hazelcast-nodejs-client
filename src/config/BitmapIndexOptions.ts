@@ -45,6 +45,8 @@ export enum UniqueKeyTransformation {
 
 }
 
+export type UniqueKeyTransformationStrings = keyof typeof UniqueKeyTransformation;
+
 const DEFAULT_UNIQUE_KEY = QueryConstants.KEY_ATTRIBUTE_NAME;
 const DEFAULT_UNIQUE_KEY_TRANSFORMATION = UniqueKeyTransformation.OBJECT;
 
@@ -63,9 +65,9 @@ export interface BitmapIndexOptions {
     /**
      * Unique key transformation configured in this index. The transformation is
      * applied to every value extracted from unique key attribute. Defaults
-     * to UniqueKeyTransformation.OBJECT. Available values are UniqueKeyTransformation enum values.
+     * to `OBJECT`. Available values are `OBJECT`, `LONG`, and `RAW`.
      */
-    uniqueKeyTransformation?: UniqueKeyTransformation;
+    uniqueKeyTransformation?: UniqueKeyTransformationStrings;
 
 }
 
@@ -74,7 +76,7 @@ export interface BitmapIndexOptions {
  * to the `uniqueKeyTransformation` enum field.
  * @internal
  */
-export class InternalBitmapIndexOptions implements BitmapIndexOptions {
+export class InternalBitmapIndexOptions {
 
     uniqueKey: string;
     uniqueKeyTransformation: UniqueKeyTransformation;

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {IndexType} from './IndexType';
+import {IndexType, IndexTypeStrings} from './IndexType';
 import {BitmapIndexOptions, InternalBitmapIndexOptions} from './BitmapIndexOptions';
 
 /**
@@ -38,7 +38,7 @@ export interface IndexConfig {
      * Type of the index. By default, set to `SORTED`. Available values
      * are `SORTED`, `HASH`, and `BITMAP`.
      */
-    type?: IndexType;
+    type?: IndexTypeStrings;
 
     /**
      * Indexed attributes.
@@ -57,7 +57,7 @@ export interface IndexConfig {
  * to the `type` enum field.
  * @internal
  */
-export class InternalIndexConfig implements IndexConfig {
+export class InternalIndexConfig{
 
     /**
      * Default index type.

@@ -25,7 +25,7 @@ import {
 } from '../core';
 import {IdentifiedDataSerializable} from '../serialization/Serializable';
 import {Portable} from '../serialization/Portable';
-import {IndexConfig} from '../config/IndexConfig';
+import {InternalIndexConfig} from '../config/IndexConfig';
 
 /**
  * Concurrent, distributed, observable and queryable map.
@@ -116,7 +116,7 @@ export interface IMap<K, V> extends DistributedObject {
      *
      * @param indexConfig Index configuration.
      */
-    addIndex(indexConfig: IndexConfig): Promise<void>;
+    addIndex(indexConfig: InternalIndexConfig): Promise<void>;
 
     /**
      * Returns `true` if this map has an item associated with key.
