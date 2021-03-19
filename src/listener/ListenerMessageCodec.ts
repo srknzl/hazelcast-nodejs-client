@@ -23,7 +23,7 @@ export interface ListenerMessageCodec {
 
     encodeAddRequest: (localOnly: boolean) => ClientMessage;
 
-    decodeAddResponse: (msg: ClientMessage) => UUID;
+    decodeAddResponse: (msg: ClientMessage) => UUID | null;
 
     encodeRemoveRequest: (listenerId: UUID) => ClientMessage;
 

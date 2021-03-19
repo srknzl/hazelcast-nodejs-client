@@ -173,7 +173,7 @@ export class Statistics {
         } catch (err) {
             this.logger.warn('Statistics', 'Could not collect data for gauge '
                 + gaugeName + ', it will not be registered', err);
-            this.allGauges[gaugeName] = { gaugeFn: () => null, type };
+            this.allGauges[gaugeName] = { gaugeFn: () => -1, type };
         }
     }
 

@@ -509,7 +509,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param key the key of the map entry
      * @throws RangeError if key is `null` or `undefined`
      */
-    getEntryView(key: K): Promise<SimpleEntryView<K, V>>;
+    getEntryView(key: K): Promise<SimpleEntryView<K, V> | null>;
 
     /**
      * Tries to acquire the lock for the specified key.

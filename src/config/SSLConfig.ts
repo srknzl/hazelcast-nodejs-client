@@ -17,6 +17,7 @@
 import {ConnectionOptions} from 'tls';
 import {Properties} from './Properties';
 import {SSLOptionsFactory} from '../connection/SSLOptionsFactory';
+import {BasicSSLOptionsFactory} from '../connection';
 
 /**
  * SSL configuration.
@@ -39,17 +40,17 @@ export interface SSLConfig {
      *
      * If you want to override the default behavior, you can define your own options.
      */
-    sslOptions?: ConnectionOptions;
+    sslOptions?: ConnectionOptions | undefined;
 
     /**
      * SSL options factory. If you don't specify it, BasicSSLOptionsFactory is used by default.
      */
-    sslOptionsFactory?: SSLOptionsFactory;
+    sslOptionsFactory?: SSLOptionsFactory | undefined;
 
     /**
      * The properties to be set for SSL options.
      */
-    sslOptionsFactoryProperties?: Properties;
+    sslOptionsFactoryProperties?: Properties | undefined;
 
 }
 
@@ -57,8 +58,8 @@ export interface SSLConfig {
 export class SSLConfigImpl implements SSLConfig {
 
     enabled = false;
-    sslOptions: ConnectionOptions = null;
-    sslOptionsFactory: SSLOptionsFactory = null;
-    sslOptionsFactoryProperties: Properties = null;
+    sslOptions: ConnectionOptions | undefined = undefined;
+    sslOptionsFactory: SSLOptionsFactory | undefined = undefined;
+    sslOptionsFactoryProperties: Properties | undefined = undefined;
 
 }

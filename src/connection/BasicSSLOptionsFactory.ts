@@ -30,12 +30,12 @@ import {SSLOptionsFactory} from './SSLOptionsFactory';
  */
 export class BasicSSLOptionsFactory implements SSLOptionsFactory {
 
-    private servername: string;
-    private rejectUnauthorized: boolean;
+    private servername: string | undefined;
+    private rejectUnauthorized: boolean | undefined;
     private ca: Buffer;
     private key: Buffer;
     private cert: Buffer;
-    private ciphers: string;
+    private ciphers: string | undefined;
 
     init(properties: Properties): Promise<void> {
         if (typeof properties !== 'object') {

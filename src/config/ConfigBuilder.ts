@@ -182,7 +182,7 @@ export class ConfigBuilder {
         } else if (jsonObject.sslOptionsFactory || jsonObject.sslOptionsFactoryProperties) {
             this.effectiveConfig.network.ssl.sslOptionsFactory = jsonObject.sslOptionsFactory;
             this.effectiveConfig.network.ssl.sslOptionsFactoryProperties = jsonObject.sslOptionsFactoryProperties
-                ? this.parseProperties(jsonObject.sslOptionsFactoryProperties) : null;
+                ? this.parseProperties(jsonObject.sslOptionsFactoryProperties) : undefined;
         }
     }
 

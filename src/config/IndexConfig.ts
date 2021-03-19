@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import {IndexType, IndexTypeStrings} from './IndexType';
+import {IndexType} from './IndexType';
 import {BitmapIndexOptions, InternalBitmapIndexOptions} from './BitmapIndexOptions';
 
 /**
@@ -38,7 +38,7 @@ export interface IndexConfig {
      * Type of the index. By default, set to `SORTED`. Available values
      * are `SORTED`, `HASH`, and `BITMAP`.
      */
-    type?: IndexTypeStrings;
+    type?: IndexType;
 
     /**
      * Indexed attributes.
@@ -57,22 +57,22 @@ export interface IndexConfig {
  * to the `type` enum field.
  * @internal
  */
-export class InternalIndexConfig {
+export class InternalIndexConfig implements IndexConfig {
 
     /**
      * Default index type.
      */
     public static readonly DEFAULT_TYPE = IndexType.SORTED;
 
-    name: string | null;
+    name: string | undefined;
     type: IndexType = InternalIndexConfig.DEFAULT_TYPE;
     attributes: string[] = [];
-    bitmapIndexOptions: InternalBitmapIndexOptions | null;
+    bitmapIndexOptions: InternalBitmapIndexOptions | undefined;
 
-    constructor(name?: string | null,
+    constructor(name?: string,
                 type?: IndexType,
                 attributes?: string[],
-                bitmapIndexOptions?: InternalBitmapIndexOptions | null) {
+                bitmapIndexOptions?: InternalBitmapIndexOptions) {
         if (name) {
             this.name = name;
         }
@@ -92,7 +92,7 @@ export class InternalIndexConfig {
 
     toString(): string {
         let bitmapIndexOptions: string;
-        if (this.bitmapIndexOptions == null) {
+        if (this.bitmapIndexOptions === undefined) {
             bitmapIndexOptions = '';
         } else {
             bitmapIndexOptions = this.bitmapIndexOptions.toString();

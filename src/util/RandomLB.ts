@@ -24,7 +24,7 @@ import {randomInt} from '../util/Util';
  * @internal
  */
 export class RandomLB extends AbstractLoadBalancer {
-    next(): Member {
+    next(): Member | null {
         const members = this.getMembers();
         if (members == null || members.length === 0) {
             return null;

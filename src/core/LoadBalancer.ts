@@ -47,7 +47,7 @@ export interface LoadBalancer {
      *
      * @return Returns the next member or `null` if no member is available
      */
-    next(): Member;
+    next(): Member | null;
 
 }
 
@@ -60,7 +60,7 @@ export abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
     private members: Member[];
     private cluster: Cluster;
 
-    abstract next(): Member;
+    abstract next(): Member | null;
 
     initLoadBalancer(cluster: Cluster, config: ClientConfig): void {
         this.cluster = cluster;

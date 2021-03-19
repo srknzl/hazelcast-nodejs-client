@@ -34,7 +34,7 @@ export class RoundRobinLB extends AbstractLoadBalancer {
         this.index = randomInt(INITIAL_SEED_CAP);
     }
 
-    next(): Member {
+    next(): Member | null {
         const members = this.getMembers();
         if (members == null || members.length === 0) {
             return null;

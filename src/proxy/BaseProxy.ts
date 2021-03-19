@@ -134,7 +134,8 @@ export abstract class BaseProxy {
     /**
      * De-serializes an object from binary form according to serialization settings of the client.
      */
-    protected toObject(data: Data): any {
+    protected toObject(data: Data | null): any {
+        if (data === null) return null;
         return this.serializationService.toObject(data);
     }
 

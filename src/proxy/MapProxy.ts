@@ -93,8 +93,8 @@ import {IndexUtil} from '../util/IndexUtil';
 import {PagingPredicateHolder} from '../protocol/PagingPredicateHolder';
 import {MapEntriesWithPagingPredicateCodec} from '../codec/MapEntriesWithPagingPredicateCodec';
 
-type EntryEventHander = (key: Data, value: Data, oldValue: Data, mergingValue: Data, eventType: number,
-                         uuid: UUID, numberOfAffectedEntries: number) => void;
+type EntryEventHander = (key: (Data | null), value: (Data | null), oldValue: (Data | null), mergingValue: (Data | null),
+                         eventType: number,  uuid: (UUID | null), numberOfAffectedEntries: number) => void;
 
 /** @internal */
 export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
@@ -147,7 +147,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
         return this.executeOnKeyInternal(keyData, proData);
     }
 
-    executeOnEntries(entryProcessor: IdentifiedDataSerializable | Portable, predicate: Predicate = null): Promise<Array<[K, V]>> {
+    executeOnEntries(entryProcessor: IdentifiedDataSerializable | Portable, predicate: Predicate | null = null):
+        Promise<Array<[K, V]>> {
         assertNotNull(entryProcessor);
         const proData = this.toData(entryProcessor);
         const toObject = this.toObject.bind(this);
@@ -278,7 +279,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
         return this.getInternal(keyData);
     }
 
-    remove(key: K, value: V = null): Promise<V | boolean> {
+    remove(key: K, value: V | null = null): Promise<V | boolean> {
         assertNotNull(key);
         const keyData = this.toData(key);
         return this.removeInternal(keyData, value);
@@ -290,7 +291,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
     }
 
     clear(): Promise<void> {
-        return this.encodeInvokeOnRandomTarget(MapClearCodec).then(() => {});
+        return this.encodeInvokeOnRandomTarget(MapClearCodec).then(() => {
+        });
     }
 
     isEmpty(): Promise<boolean> {
@@ -338,11 +340,13 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
     }
 
     evictAll(): Promise<void> {
-        return this.encodeInvokeOnRandomTarget(MapEvictAllCodec).then(() => {});
+        return this.encodeInvokeOnRandomTarget(MapEvictAllCodec).then(() => {
+        });
     }
 
     flush(): Promise<void> {
-        return this.encodeInvokeOnRandomTarget(MapFlushCodec).then(() => {});
+        return this.encodeInvokeOnRandomTarget(MapFlushCodec).then(() => {
+        });
     }
 
     lock(key: K, leaseTime = -1): Promise<void> {
@@ -350,7 +354,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
         const keyData = this.toData(key);
         return this.encodeInvokeOnKeyWithTimeout(
             Number.MAX_SAFE_INTEGER, MapLockCodec, keyData, keyData, 0, leaseTime, 0
-        ).then(() => {});
+        ).then(() => {
+        });
     }
 
     isLocked(key: K): Promise<boolean> {
@@ -363,13 +368,15 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
     unlock(key: K): Promise<void> {
         assertNotNull(key);
         const keyData = this.toData(key);
-        return this.encodeInvokeOnKey(MapUnlockCodec, keyData, keyData, 0, 0).then(() => {});
+        return this.encodeInvokeOnKey(MapUnlockCodec, keyData, keyData, 0, 0).then(() => {
+        });
     }
 
     forceUnlock(key: K): Promise<void> {
         assertNotNull(key);
         const keyData = this.toData(key);
-        return this.encodeInvokeOnKey(MapForceUnlockCodec, keyData, keyData, 0).then(() => {});
+        return this.encodeInvokeOnKey(MapForceUnlockCodec, keyData, keyData, 0).then(() => {
+        });
     }
 
     keySet(): Promise<K[]> {
@@ -380,15 +387,17 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             });
     }
 
-    loadAll(keys: K[] = null, replaceExistingValues = true): Promise<void> {
+    loadAll(keys: K[] | null = null, replaceExistingValues = true): Promise<void> {
         if (keys == null) {
             return this.encodeInvokeOnRandomTarget(MapLoadAllCodec, replaceExistingValues)
-                .then(() => {});
+                .then(() => {
+                });
         } else {
             const toData = this.toData.bind(this);
             const keysData: Data[] = keys.map<Data>(toData);
             return this.encodeInvokeOnRandomTarget(MapLoadGivenKeysCodec, keysData, replaceExistingValues)
-                .then(() => {});
+                .then(() => {
+                });
         }
     }
 
@@ -442,7 +451,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             });
     }
 
-    getEntryView(key: K): Promise<SimpleEntryView<K, V>> {
+    getEntryView(key: K): Promise<SimpleEntryView<K, V> | null> {
         assertNotNull(key);
         const keyData = this.toData(key);
         return this.encodeInvokeOnKey(MapGetEntryViewCodec, keyData, keyData, 0)
@@ -463,7 +472,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
     addIndex(indexConfig: IndexConfig): Promise<void> {
         assertNotNull(indexConfig);
         const normalizedConfig = IndexUtil.validateAndNormalize(this.name, indexConfig);
-        return this.encodeInvokeOnRandomTarget(MapAddIndexCodec, normalizedConfig).then(() => {});
+        return this.encodeInvokeOnRandomTarget(MapAddIndexCodec, normalizedConfig).then(() => {
+        });
     }
 
     tryLock(key: K, timeout = 0, leaseTime = -1): Promise<boolean> {
@@ -549,7 +559,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             });
     }
 
-    protected removeInternal(keyData: Data, value: V = null): Promise<V | boolean> {
+    protected removeInternal(keyData: Data, value: V | null = null): Promise<V | boolean> {
         if (value == null) {
             return this.encodeInvokeOnKey(MapRemoveCodec, keyData, keyData, 0)
                 .then((clientMessage) => {
@@ -585,7 +595,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
     }
 
     protected deleteInternal(keyData: Data): Promise<void> {
-        return this.encodeInvokeOnKey(MapDeleteCodec, keyData, keyData, 0).then(() => {});
+        return this.encodeInvokeOnKey(MapDeleteCodec, keyData, keyData, 0).then(() => {
+        });
     }
 
     protected evictInternal(keyData: Data): Promise<boolean> {
@@ -624,7 +635,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             request = this.encodeInvokeOnKey(MapPutTransientCodec,
                 keyData, keyData, valueData, 0, ttl)
         }
-        return request.then(() => {});
+        return request.then(() => {
+        });
     }
 
     protected replaceInternal(keyData: Data, newValueData: Data): Promise<V> {
@@ -652,7 +664,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             request = this.encodeInvokeOnKey(MapSetCodec,
                 keyData, keyData, valueData, 0, ttl);
         }
-        return request.then(() => {});
+        return request.then(() => {
+        });
     }
 
     protected tryPutInternal(keyData: Data, valueData: Data, timeout: number): Promise<boolean> {
@@ -689,11 +702,12 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
                     .then(() => this.finalizePutAll(partitionsToKeys)),
             );
         }
-        return Promise.all(partitionPromises).then(() => {});
+        return Promise.all(partitionPromises).then(() => {
+        });
     }
 
     private addEntryListenerInternal(
-        listener: MapListener<K, V>, predicate: Predicate, key: K, includeValue: boolean,
+        listener: MapListener<K, V>, predicate: Predicate | undefined, key: K, includeValue: boolean,
     ): Promise<string> {
         let flags: any = null;
         const conversionTable: { [funcName: string]: EventType } = {
@@ -713,9 +727,16 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             }
         }
         const toObject = this.toObject.bind(this);
-        const entryEventHandler = (key: Data, value: Data, oldValue: Data, mergingValue: Data, eventType: number,
-                                   uuid: UUID, numberOfAffectedEntries: number): void => {
+        const entryEventHandler = (key: (Data | null), value: (Data | null), oldValue: (Data | null), mergingValue: (Data | null),
+                                   eventType: number,  uuid: (UUID | null), numberOfAffectedEntries: number): void => {
+            if (!uuid) {
+                throw new Error('UUID null');
+            }
             const member = this.clusterService.getMember(uuid);
+            if (!member) {
+                throw new Error('Member null');
+            }
+
             const name = this.name;
 
             const entryEvent = new EntryEvent(
@@ -731,31 +752,31 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
 
             switch (eventType) {
                 case EventType.ADDED:
-                    listener.added.apply(null, [entryEvent]);
+                    listener.added?.apply(null, [entryEvent]);
                     break;
                 case EventType.REMOVED:
-                    listener.removed.apply(null, [entryEvent]);
+                    listener.removed?.apply(null, [entryEvent]);
                     break;
                 case EventType.UPDATED:
-                    listener.updated.apply(null, [entryEvent]);
+                    listener.updated?.apply(null, [entryEvent]);
                     break;
                 case EventType.EVICTED:
-                    listener.evicted.apply(null, [entryEvent]);
+                    listener.evicted?.apply(null, [entryEvent]);
                     break;
                 case EventType.EVICT_ALL:
-                    listener.mapEvicted.apply(null, [mapEvent]);
+                    listener.mapEvicted?.apply(null, [mapEvent]);
                     break;
                 case EventType.CLEAR_ALL:
-                    listener.mapCleared.apply(null, [mapEvent]);
+                    listener.mapCleared?.apply(null, [mapEvent]);
                     break;
                 case EventType.MERGED:
-                    listener.merged.apply(null, [entryEvent]);
+                    listener.merged?.apply(null, [entryEvent]);
                     break;
                 case EventType.EXPIRED:
-                    listener.expired.apply(null, [entryEvent]);
+                    listener.expired?.apply(null, [entryEvent]);
                     break;
                 case EventType.LOADED:
-                    listener.loaded.apply(null, [entryEvent]);
+                    listener.loaded?.apply(null, [entryEvent]);
                     break;
             }
         };
@@ -789,7 +810,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             encodeAddRequest(localOnly: boolean): ClientMessage {
                 return MapAddEntryListenerToKeyCodec.encodeRequest(name, keyData, includeValue, flags, localOnly);
             },
-            decodeAddResponse(msg: ClientMessage): UUID {
+            decodeAddResponse(msg: ClientMessage): UUID | null {
                 return MapAddEntryListenerToKeyCodec.decodeResponse(msg);
             },
             encodeRemoveRequest(listenerId: UUID): ClientMessage {
@@ -805,7 +826,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
                 return MapAddEntryListenerToKeyWithPredicateCodec.encodeRequest(name, keyData, predicateData, includeValue,
                     flags, localOnly);
             },
-            decodeAddResponse(msg: ClientMessage): UUID {
+            decodeAddResponse(msg: ClientMessage): UUID | null {
                 return MapAddEntryListenerToKeyWithPredicateCodec.decodeResponse(msg);
             },
             encodeRemoveRequest(listenerId: UUID): ClientMessage {
@@ -820,7 +841,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             encodeAddRequest(localOnly: boolean): ClientMessage {
                 return MapAddEntryListenerWithPredicateCodec.encodeRequest(name, predicateData, includeValue, flags, localOnly);
             },
-            decodeAddResponse(msg: ClientMessage): UUID {
+            decodeAddResponse(msg: ClientMessage): UUID | null {
                 return MapAddEntryListenerWithPredicateCodec.decodeResponse(msg);
             },
             encodeRemoveRequest(listenerId: UUID): ClientMessage {
@@ -834,7 +855,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             encodeAddRequest(localOnly: boolean): ClientMessage {
                 return MapAddEntryListenerCodec.encodeRequest(name, includeValue, flags, localOnly);
             },
-            decodeAddResponse(msg: ClientMessage): UUID {
+            decodeAddResponse(msg: ClientMessage): UUID | null {
                 return MapAddEntryListenerCodec.decodeResponse(msg);
             },
             encodeRemoveRequest(listenerId: UUID): ClientMessage {

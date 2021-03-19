@@ -34,7 +34,7 @@ import {
     Addresses,
     MemberImpl,
     ClientOfflineError,
-    IOError
+    IOError, TargetNotMemberError
 } from '../core';
 import {lookupPublicAddress} from '../core/MemberInfo';
 import {Connection} from './Connection';
@@ -49,7 +49,6 @@ import {
     Task,
     timedPromise
 } from '../util/Util';
-import {BasicSSLOptionsFactory} from '../connection/BasicSSLOptionsFactory';
 import {ILogger} from '../logging/ILogger';
 import {HeartbeatManager} from './HeartbeatManager';
 import {UuidUtil} from '../util/UuidUtil';
@@ -70,6 +69,7 @@ import {PartitionService, PartitionServiceImpl} from '../PartitionService';
 import {AddressProvider} from '../connection/AddressProvider';
 import {ClusterService} from '../invocation/ClusterService';
 import {SerializationService} from '../serialization/SerializationService';
+import {BasicSSLOptionsFactory} from '../connection';
 
 const CONNECTION_REMOVED_EVENT_NAME = 'connectionRemoved';
 const CONNECTION_ADDED_EVENT_NAME = 'connectionAdded';
@@ -199,7 +199,7 @@ export class ConnectionRegistryImpl implements ConnectionRegistry {
     getRandomConnection(): Connection | null {
         if (this.smartRoutingEnabled) {
             const member = this.loadBalancer.next();
-            if (member != null) {
+            if (member !== null && member.uuid !== null) {
                 const connection = this.getConnection(member.uuid);
                 if (connection != null) {
                     return connection;
@@ -413,7 +413,7 @@ export class ConnectionManager extends EventEmitter {
         if (!this.lifecycleService.isRunning()) {
             return Promise.reject(new ClientNotActiveError('Client is not active.'));
         }
-
+        if (member.uuid === null)return Promise.reject(new TargetNotMemberError(''));
         const connection = this.connectionRegistry.getConnection(member.uuid);
         if (connection) {
             return Promise.resolve(connection);
@@ -606,10 +606,10 @@ export class ConnectionManager extends EventEmitter {
 
         // try to connect to a member in the member list first
         return this.tryConnecting(
-                0, members, triedAddressesPerAttempt,
-                (m) => m.address,
-                (m) => this.getOrConnectToMember(m)
-            )
+            0, members, triedAddressesPerAttempt,
+            (m) => m.address,
+            (m) => this.getOrConnectToMember(m)
+        )
             .then((connected) => {
                 if (connected) {
                     return true;
@@ -652,7 +652,7 @@ export class ConnectionManager extends EventEmitter {
             })
             .catch((err: Error) => {
                 if (err instanceof ClientNotAllowedInClusterError
-                        || err instanceof InvalidConfigurationError) {
+                    || err instanceof InvalidConfigurationError) {
                     this.logger.warn('ConnectionManager', 'Stopped trying on the cluster: '
                         + ctx.clusterName + ' reason: ' + err.message);
                     return false;
@@ -694,7 +694,7 @@ export class ConnectionManager extends EventEmitter {
                 this.logger.warn('ConnectionManager', 'Error during initial connection to '
                     + target.toString() + ' ' + err);
                 if (err instanceof InvalidConfigurationError
-                        || err instanceof ClientNotAllowedInClusterError) {
+                    || err instanceof ClientNotAllowedInClusterError) {
                     throw err;
                 }
                 return null;
@@ -755,11 +755,13 @@ export class ConnectionManager extends EventEmitter {
             if (this.clientConfig.network.ssl.sslOptions) {
                 const opts = this.clientConfig.network.ssl.sslOptions;
                 return this.connectTLSSocket(translatedAddress, opts);
-            } else if (this.clientConfig.network.ssl.sslOptionsFactory
-                || this.clientConfig.network.ssl.sslOptionsFactoryProperties) {
+            } else if (
+                this.clientConfig.network.ssl.sslOptionsFactory
+                && this.clientConfig.network.ssl.sslOptionsFactoryProperties
+            ) {
                 const factoryProperties = this.clientConfig.network.ssl.sslOptionsFactoryProperties;
                 let factory = this.clientConfig.network.ssl.sslOptionsFactory;
-                if (factory == null) {
+                if (factory === undefined) {
                     factory = new BasicSSLOptionsFactory();
                 }
                 return factory.init(factoryProperties).then(() => {
@@ -767,11 +769,7 @@ export class ConnectionManager extends EventEmitter {
                 });
             } else {
                 // the default behavior when ssl is enabled
-                const opts = this.clientConfig.network.ssl.sslOptions = {
-                    checkServerIdentity: (): any => null,
-                    rejectUnauthorized: true,
-                };
-                return this.connectTLSSocket(translatedAddress, opts);
+                return this.connectTLSSocket(translatedAddress, this.clientConfig.network.ssl.sslOptions);
             }
         } else {
             return this.connectNetSocket(translatedAddress);
@@ -880,6 +878,11 @@ export class ConnectionManager extends EventEmitter {
         }
 
         for (const member of this.clusterService.getMembers()) {
+
+            if (member.uuid === null){
+                continue;
+            }
+
             if (this.connectionRegistry.getConnection(member.uuid) != null) {
                 continue;
             }
@@ -959,7 +962,7 @@ export class ConnectionManager extends EventEmitter {
         const existingConnection = this.connectionRegistry.getConnection(response.memberUuid);
         if (existingConnection != null) {
             connection.close(`Duplicate connection to same member with uuid: ${response.memberUuid}`,
-                 new IllegalStateError(`Duplicate connection to same member with uuid: ${response.memberUuid}`));
+                new IllegalStateError(`Duplicate connection to same member with uuid: ${response.memberUuid}`));
             return existingConnection;
         }
 
