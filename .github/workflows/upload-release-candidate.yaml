@@ -34,10 +34,6 @@ jobs:
               run: npm run validate-user-code
             - name: Generate docs
               run: npm run generate-docs
-            - name: Run all tests
-              env:
-                  HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-              run: npm run coverage
             - name: Pack an archive
               run: npm pack
             - name: Calculate sha256sum
