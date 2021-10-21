@@ -1,0 +1,46 @@
+name: Run tests
+on:
+    workflow_dispatch:
+        inputs:
+            branch:
+                required: true
+                description: Branch to test
+
+            pattern:
+                required: true
+                description: Test pattern to pass `npm test`
+                default: ''
+
+            nodejs_version:
+                required: true
+                description: Nodejs version
+jobs:
+    run-tests:
+        name: Run Tests on (${{ matrix.os }})
+        runs-on: ${{ matrix.os }}
+
+        strategy:
+            matrix:
+                os: [ ubuntu-latest, windows-latest ]
+
+        steps:
+            - name: Setup Java
+              uses: actions/setup-java@v1
+              with:
+                  java-version: 8
+            - name: Setup Node.js
+              uses: actions/setup-node@v2
+              with:
+                  node-version: ${{ github.event.inputs.nodejs_version }}
+            - name: Checkout code
+              uses: actions/checkout@v2
+              with:
+                  ref: ${{ github.event.inputs.branch }}
+            - name: Install dependencies and compile client
+              run: |
+                  npm install
+                  npm run compile
+            - name: Run tests
+              env:
+                  HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+              run: npm run test ${{ github.event.inputs.pattern }}
