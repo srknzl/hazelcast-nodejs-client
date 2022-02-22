@@ -64,7 +64,6 @@
         "startrc": "node scripts/test-runner.js startrc",
         "check-code-samples": "node scripts/test-runner.js check-code-samples",
         "check-markdown-links": "markdown-link-check -q",
-        "prepare": "husky install",
         "prepublishOnly": "path-exists lib"
     },
     "repository": {
