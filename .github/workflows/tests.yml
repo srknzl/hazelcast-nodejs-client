@@ -33,4 +33,4 @@ jobs:
               env:
                   HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
               run: |
-                  npm test ${{ github.event.inputs.test_glob }}
+                  npm test ${{ github.event.inputs.test_pattern }}
