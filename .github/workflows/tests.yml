@@ -1,12 +1,10 @@
 name: Run tests
 on:
-    push:
-        branches-ignore:
-            - 'gh-pages'
-        tags-ignore:
-            - '*'
-    pull_request:
     workflow_dispatch:
+        inputs:
+            test_pattern:
+                description: The pattern to pass to npm test
+                required: true
 jobs:
     run-tests:
         name: Run Tests on (${{ matrix.os }})
@@ -31,18 +29,8 @@ jobs:
               run: |
                   npm install
                   npm run compile
-            - name: Run OS tests
-              if: ${{ github.event_name == 'pull_request' }}
-              run: |
-                  npm run coverage
             - name: Run Enterprise tests
-              if: ${{ github.event_name == 'push' }}
               env:
                   HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
               run: |
-                  npm run coverage
-            - name: Publish to Codecov
-              if: ${{ matrix.os == 'ubuntu-latest' }}
-              uses: codecov/codecov-action@v2
-              with:
-                files: coverage/lcov.info
+                  npm test ${{ github.event.inputs.test_glob }}
