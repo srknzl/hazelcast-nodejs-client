@@ -6,7 +6,7 @@ on:
         tags-ignore:
             - '*'
     pull_request:
-
+    workflow_dispatch:
 jobs:
     run-tests:
         name: Run Tests on (${{ matrix.os }})
