@@ -1,4 +1,4 @@
-name: Runs nightly tests on maintenance branches
+name: Runs maintenance on branches
 on:
     workflow_dispatch:
         inputs:
