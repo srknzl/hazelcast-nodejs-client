@@ -40,7 +40,13 @@ jobs:
               run: npm run lint
             - name: Validate User Code
               run: npm run validate-user-code
-            - name: Run tests
+            - name: Run tests pre 4.2.x 
+              if: ${{ matrix.branch == '4.0.x' || matrix.branch == '4.1.x' }}
               env:
                   HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-              run: npx mocha -g ${{ github.event.inputs.test_pattern }} --recursive test
+              run: node download-remote-controller.js && npx mocha -g ${{ github.event.inputs.test_pattern }} --recursive test
+            - name: Run tests 4.2.x and onwards
+              if: ${{ matrix.branch == '4.2.x' || matrix.branch == '5.0.x' }}
+              env:
+                  HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+              run: npm test ${{ github.event.inputs.test_pattern }}
