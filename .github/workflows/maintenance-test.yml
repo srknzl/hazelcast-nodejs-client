@@ -43,4 +43,4 @@ jobs:
             - name: Run tests
               env:
                   HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
-              run: npm test ${{ github.event.inputs.test_pattern }}
+              run: npx mocha -g ${{ github.event.inputs.test_pattern }} --recursive test
