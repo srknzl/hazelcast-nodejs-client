@@ -18,7 +18,7 @@
 const expect = require('chai').expect;
 const RC = require('./RC');
 const { Client } = require('../.');
-const Util = require('./Util');
+const TestUtil = require('./TestUtil');
 
 describe('ListenersOnReconnectTest', function () {
 
@@ -69,13 +69,20 @@ describe('ListenersOnReconnectTest', function () {
                 }
             }
         };
-        await map.addEntryListener(listener, 'keyx', true);
+        const registrationId = await map.addEntryListener(listener, 'keyx', true);
         await Promise.all([
             turnoffMember(cluster.id, members[membersToClose[0]].uuid),
             turnoffMember(cluster.id, members[membersToClose[1]].uuid)
         ]);
 
-        await Util.promiseWaitMilliseconds(8000);
+        // Assert that connections are closed and the listener is reregistered.
+        await TestUtil.assertTrueEventually(async () => {
+            const activeConnectionsCount = TestUtil.getConnections(client).length;
+            expect(activeConnectionsCount).to.be.equal(1);
+            const activeRegistrations = TestUtil.getActiveRegistrations(client, registrationId);
+            expect([...activeRegistrations.keys()].length).to.be.equal(1);
+        });
+
         return map.put('keyx', 'valx');
     }
 
