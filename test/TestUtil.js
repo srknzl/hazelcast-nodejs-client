@@ -17,9 +17,6 @@
 
 const { expect } = require('chai');
 const { BuildInfo } = require('../lib/BuildInfo');
-const { Lang } = require('./integration/remote_controller/remote_controller_types');
-const { Client } = require('..');
-const RC = require('./integration/RC');
 
 exports.promiseLater = function (time, func) {
     if (func === undefined) {
@@ -194,21 +191,6 @@ exports.isServerVersionAtLeast = function(client, version) {
     return actual === BuildInfo.UNKNOWN_VERSION_ID || expected <= actual;
 };
 
-/**
- * Returns
- * - 0 if they are equal
- * - positive number if server version is newer than the version
- * - negative number if server version is older than the version
- */
-exports.compareServerVersionWithRC = async function (rc, version) {
-    const script = 'result=com.hazelcast.instance.GeneratedBuildProperties.VERSION;';
-    const result = await rc.executeOnController(null, script, Lang.JAVASCRIPT);
-
-    const rcServerVersion = exports.calculateServerVersionFromString(result.result.toString());
-    const comparedVersion = exports.calculateServerVersionFromString(version);
-
-    return rcServerVersion - comparedVersion;
-};
 
 exports.isClientVersionAtLeast = function(version) {
     const actual = exports.calculateServerVersionFromString(BuildInfo.getClientVersion());
@@ -444,133 +426,6 @@ exports.getUpdateCount = async (result) => {
         return result.updateCount;
     } else {
         return await result.getUpdateCount();
-    }
-};
-
-exports.TestFactory = class TestFactory {
-    constructor() {
-        this.defaultConfig = `
-            <hazelcast xmlns="http://www.hazelcast.com/schema/config"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xsi:schemaLocation="http://www.hazelcast.com/schema/config
-                http://www.hazelcast.com/schema/config/hazelcast-config-4.0.xsd">
-                <network>
-                    <port>0</port>
-                </network>
-            </hazelcast>
-        `;
-        this.clusterIds = new Set();
-        this.clients = new Set();
-    }
-
-    // Creates a new Hazelcast client for a serial test with given config and registers it to clients set
-    async newHazelcastClientForSerialTests(clientConfig) {
-        return await this._createClient(clientConfig);
-    }
-
-    // Creates a new Hazelcast client for a parallel test with given config and registers it to clients set
-    async newHazelcastClientForParallelTests(clientConfig, memberOrMemberList) {
-        // Add cluster member config for parallel tests.
-        this._addClusterMembersToConfig(clientConfig, memberOrMemberList);
-        return await this._createClient(clientConfig);
-    }
-
-    async _createClient(clientConfig) {
-        const client = await Client.newHazelcastClient(clientConfig);
-        this.clients.add(client);
-        return client;
-    }
-
-    _addClusterMembersToConfig(clientConfig, memberOrMemberList) {
-        if (memberOrMemberList === undefined) {
-            return;
-        }
-        const clusterMembers = Array.isArray(memberOrMemberList) ? memberOrMemberList.map(m => `127.0.0.1:${m.port}`)
-            : [`127.0.0.1:${memberOrMemberList.port}`];
-
-        if (clientConfig.network === undefined) {
-            clientConfig.network = {
-                clusterMembers: clusterMembers
-            };
-        } else if (clientConfig.network.clusterMembers === undefined) {
-            clientConfig.network.clusterMembers = clusterMembers;
-        }
-    }
-
-    // Creates a new Hazelcast failover client for parallel tests with given config and registers it to clients set
-    async newHazelcastFailoverClientForParallelTests(clientFailoverConfig, memberOrMemberList) {
-        // Add cluster member config for parallel tests.
-        clientFailoverConfig.clientConfigs.forEach(clientConfig => {
-            this._addClusterMembersToConfig(clientConfig, memberOrMemberList);
-        });
-
-        return await this._createFailoverClient(clientFailoverConfig);
-    }
-
-    // Creates a new Hazelcast failover client for serial tests with given config and registers it to clients set
-    async newHazelcastFailoverClientForSerialTests(clientFailoverConfig) {
-        return await this._createFailoverClient(clientFailoverConfig);
-    }
-
-    async _createFailoverClient(clientFailoverConfig) {
-        const client = await Client.newHazelcastFailoverClient(clientFailoverConfig);
-        this.clients.add(client);
-        return client;
-    }
-
-    async _createCluster(hzVersion, clusterConfig) {
-        const cluster = await RC.createCluster(hzVersion, clusterConfig);
-        this.clusterIds.add(cluster.id);
-        return cluster;
-    }
-
-    // Creates a new Hazelcast cluster for a serial test and registers it to clusters set
-    async createClusterForSerialTests(hzVersion = null, clusterConfig = null) {
-        return await this._createCluster(hzVersion, clusterConfig);
-    }
-
-    // Creates a new Hazelcast cluster for a parallel test and registers it to clusters set
-    async createClusterForParallelTests(hzVersion = null, clusterConfig = this.defaultConfig) {
-        return await this._createCluster(hzVersion, clusterConfig);
-    }
-
-    // Creates a new Hazelcast for serial test cluster keeping its name and registers it to clusters set
-    async createClusterKeepClusterNameForSerialTests(hzVersion = null, clusterConfig = null) {
-        return await this._createClusterKeepClusterName(hzVersion, clusterConfig);
-    }
-
-    // Creates a new Hazelcast cluster for parallel test keeping its name and registers it to clusters set
-    async createClusterKeepClusterNameForParallelTests(hzVersion = null, clusterConfig = this.defaultConfig) {
-        return await this._createClusterKeepClusterName(hzVersion, clusterConfig);
-    }
-
-    // Creates a new Hazelcast cluster keeping its name and registers it to clusters set
-    async _createClusterKeepClusterName(hzVersion, clusterConfig) {
-        const cluster = await RC.createClusterKeepClusterName(hzVersion, clusterConfig);
-        this.clusterIds.add(cluster.id);
-        return cluster;
-    }
-
-    // Shutdowns all clients and clusters
-    async shutdownAll() {
-        for (const client of this.clients) {
-            await client.shutdown();
-        }
-
-        for (const clusterId of this.clusterIds) {
-            await RC.shutdownCluster(clusterId);
-        }
-
-        this.clients.clear();
-        this.clusterIds.clear();
-    }
-
-    async shutdownAllClients() {
-        for (const client of this.clients) {
-            await client.shutdown();
-        }
-
-        this.clients.clear();
     }
 };
 
