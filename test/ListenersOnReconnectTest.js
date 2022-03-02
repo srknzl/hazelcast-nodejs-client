@@ -156,7 +156,7 @@ describe('ListenersOnReconnectTest', function () {
                 await RC.terminateMember(cluster.id, member.uuid);
                 await RC.startMember(cluster.id);
 
-                await Util.promiseWaitMilliseconds(8000);
+                await TestUtil.promiseWaitMilliseconds(8000);
                 return map.put('keyx', 'valx');
             }
 
