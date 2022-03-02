@@ -37,7 +37,7 @@ describe('ListenersOnReconnectTest', function () {
         return RC.terminateCluster(cluster.id);
     });
 
-    async function closeTwoMembersOutOfThreeAndTestListener(done, isSmart, membersToClose, turnoffMember) {
+    async function closeTwoMembersOutOfThreeAndTestListener(isSmart, membersToClose, turnoffMember) {
         const deferred = Util.deferredPromise();
         const members = await Promise.all([
             RC.startMember(cluster.id),
