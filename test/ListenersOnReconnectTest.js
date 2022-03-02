@@ -18,7 +18,7 @@
 const expect = require('chai').expect;
 const RC = require('./RC');
 const { Client } = require('../.');
-const TestUtil = require('../lib/util/Util');
+const Util = require('../lib/util/Util');
 const TestUtil = require('./TestUtil');
 
 describe('ListenersOnReconnectTest', function () {
