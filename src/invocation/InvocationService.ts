@@ -304,6 +304,7 @@ export class InvocationService {
                     continue;
                 }
                 if (!connection.isAlive()) {
+                    console.log(invocation.request.getMessageType());
                     this.notifyError(invocation, new TargetDisconnectedError(connection.getClosedReason()));
                     continue;
                 }
