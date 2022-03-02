@@ -17,7 +17,6 @@
 
 const { expect } = require('chai');
 const { BuildInfo } = require('../lib/BuildInfo');
-const { UuidUtil } = require('../lib/util/UuidUtil');
 
 
 exports.promiseLater = function (time, func) {
