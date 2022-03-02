@@ -19,6 +19,7 @@ const { expect } = require('chai');
 const RC = require('./RC');
 const { Client } = require('../../');
 const TestUtil = require('../TestUtil');
+const Util = require('../../lib/util/Util');
 
 describe('ListenersOnReconnectTest', function () {
 
@@ -36,7 +37,8 @@ describe('ListenersOnReconnectTest', function () {
         return RC.terminateCluster(cluster.id);
     });
 
-    async function closeTwoMembersOutOfThreeAndTestListener(done, isSmart, membersToClose, turnoffMember) {
+    async function closeTwoMembersOutOfThreeAndTestListener(isSmart, membersToClose, turnoffMember) {
+        const deferred = Util.deferredPromise();
         const members = await Promise.all([
             RC.startMember(cluster.id),
             RC.startMember(cluster.id),
@@ -63,9 +65,9 @@ describe('ListenersOnReconnectTest', function () {
                     expect(entryEvent.oldValue).to.be.equal(null);
                     expect(entryEvent.mergingValue).to.be.equal(null);
                     expect(entryEvent.member).to.not.be.equal(null);
-                    done();
+                    deferred.resolve();
                 } catch (err) {
-                    done(err);
+                    deferred.reject(err);
                 }
             }
         };
@@ -83,7 +85,8 @@ describe('ListenersOnReconnectTest', function () {
             expect([...activeRegistrations.keys()].length).to.be.equal(1);
         });
 
-        return map.put('keyx', 'valx');
+        await map.put('keyx', 'valx');
+        await deferred.promise;
     }
 
     [true, false].forEach(function (isSmart) {
@@ -95,28 +98,28 @@ describe('ListenersOnReconnectTest', function () {
          *  - the other unrelated connection
          */
 
-        it('kill two members [1,2], listener still receives map.put event [smart=' + isSmart + ']', function (done) {
-            closeTwoMembersOutOfThreeAndTestListener(done, isSmart, [1, 2], RC.terminateMember).catch(done);
+        it('kill two members [1,2], listener still receives map.put event [smart=' + isSmart + ']', async function () {
+            await closeTwoMembersOutOfThreeAndTestListener(isSmart, [1, 2], RC.terminateMember);
         });
 
-        it('kill two members [0,1], listener still receives map.put event [smart=' + isSmart + ']', function (done) {
-            closeTwoMembersOutOfThreeAndTestListener(done, isSmart, [0, 1], RC.terminateMember).catch(done);
+        it('kill two members [0,1], listener still receives map.put event [smart=' + isSmart + ']', async function () {
+            await closeTwoMembersOutOfThreeAndTestListener(isSmart, [0, 1], RC.terminateMember);
         });
 
-        it('kill two members [0,2], listener still receives map.put event [smart=' + isSmart + ']', function (done) {
-            closeTwoMembersOutOfThreeAndTestListener(done, isSmart, [0, 2], RC.terminateMember).catch(done);
+        it('kill two members [0,2], listener still receives map.put event [smart=' + isSmart + ']', async function () {
+            await closeTwoMembersOutOfThreeAndTestListener(isSmart, [0, 2], RC.terminateMember);
         });
 
-        it('shutdown two members [1,2], listener still receives map.put event [smart=' + isSmart + ']', function (done) {
-            closeTwoMembersOutOfThreeAndTestListener(done, isSmart, [1, 2], RC.shutdownMember).catch(done);
+        it('shutdown two members [1,2], listener still receives map.put event [smart=' + isSmart + ']', async function () {
+            await closeTwoMembersOutOfThreeAndTestListener(isSmart, [1, 2], RC.shutdownMember);
         });
 
-        it('shutdown two members [0,1], listener still receives map.put event [smart=' + isSmart + ']', function (done) {
-            closeTwoMembersOutOfThreeAndTestListener(done, isSmart, [0, 1], RC.shutdownMember).catch(done);
+        it('shutdown two members [0,1], listener still receives map.put event [smart=' + isSmart + ']', async function () {
+            await closeTwoMembersOutOfThreeAndTestListener(isSmart, [0, 1], RC.shutdownMember);
         });
 
-        it('shutdown two members [0,2], listener still receives map.put event [smart=' + isSmart + ']', function (done) {
-            closeTwoMembersOutOfThreeAndTestListener(done, isSmart, [0, 2], RC.shutdownMember).catch(done);
+        it('shutdown two members [0,2], listener still receives map.put event [smart=' + isSmart + ']', async function () {
+            await closeTwoMembersOutOfThreeAndTestListener(isSmart, [0, 2], RC.shutdownMember);
         });
 
         it('restart member, listener still receives map.put event [smart=' + isSmart + ']', function (done) {
