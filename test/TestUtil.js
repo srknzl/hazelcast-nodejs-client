@@ -476,6 +476,11 @@ exports.TestFactory = class TestFactory {
     }
 
     async _createClient(clientConfig) {
+        if (!clientConfig.properties) {
+            clientConfig.properties = {'hazelcast.logging.level': 'TRACE'};
+        } else if (clientConfig.properties && !clientConfig.properties['hazelcast.logging.level']) {
+            clientConfig.properties['hazelcast.logging.level'] = 'TRACE';
+        }
         const client = await Client.newHazelcastClient(clientConfig);
         this.clients.add(client);
         return client;

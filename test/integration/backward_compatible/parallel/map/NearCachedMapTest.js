@@ -46,6 +46,9 @@ describe('NearCachedMapTest', function () {
                         'ncc-map': {
                             invalidateOnChange
                         }
+                    },
+                    properties: {
+                        'hazelcast.logging.level': 'TRACE'
                     }
                 };
                 client1 = await testFactory.newHazelcastClientForParallelTests(cfg, member);
