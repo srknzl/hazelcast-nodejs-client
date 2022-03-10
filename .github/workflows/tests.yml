@@ -4,7 +4,8 @@ on:
         inputs:
             test_pattern:
                 description: The pattern to pass to npm test
-                required: true
+                required: false
+                default: ''
 jobs:
     run-tests:
         name: Run Tests on (${{ matrix.os }})
@@ -29,7 +30,14 @@ jobs:
               run: |
                   npm install
                   npm run compile
-            - name: Run Enterprise tests
+            - name: Run All Enterprise tests
+              if: ${{ github.event.inputs.test_pattern == ''}}
+              env:
+                  HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
+              run: |
+                  npm test
+            - name: Run Some Enterprise tests
+              if: ${{ github.event.inputs.test_pattern != ''}}
               env:
                   HAZELCAST_ENTERPRISE_KEY: ${{ secrets.HAZELCAST_ENTERPRISE_KEY }}
               run: |
