@@ -48,7 +48,7 @@ export enum UniqueKeyTransformation {
 export type UniqueKeyTransformationStrings = keyof typeof UniqueKeyTransformation;
 
 const DEFAULT_UNIQUE_KEY = QueryConstants.KEY_ATTRIBUTE_NAME;
-const DEFAULT_UNIQUE_KEY_TRANSFORMATION = UniqueKeyTransformation.OBJECT;
+export const DEFAULT_UNIQUE_KEY_TRANSFORMATION = UniqueKeyTransformation.OBJECT;
 
 /**
  * Configures indexing options specific to bitmap indexes.

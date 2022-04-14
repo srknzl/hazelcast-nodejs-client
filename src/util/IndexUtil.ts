@@ -17,8 +17,12 @@
 
 import {IndexConfig, InternalIndexConfig} from '../config/IndexConfig';
 import {IndexType} from '../config/IndexType';
-import {UniqueKeyTransformation, InternalBitmapIndexOptions} from '../config/BitmapIndexOptions';
-import {tryGetEnum} from '../util/Util';
+import {
+    UniqueKeyTransformation,
+    InternalBitmapIndexOptions,
+    DEFAULT_UNIQUE_KEY_TRANSFORMATION
+} from '../config/BitmapIndexOptions';
+import * as Util from '../util/Util';
 
 /**
  * Maximum number of attributes allowed in the index.
@@ -55,7 +59,7 @@ export class IndexUtil {
 
         let type = InternalIndexConfig.DEFAULT_TYPE;
         if (config.type) {
-            type = tryGetEnum(IndexType, config.type);
+            type = Util.tryGetEnum(IndexType, config.type);
         }
         if (type === IndexType.BITMAP && originalAttributeNames.length > 1) {
             throw new TypeError('Composite bitmap indexes are not supported: ' + config);
@@ -89,20 +93,23 @@ export class IndexUtil {
 
         // Construct final index
         let name = config.name;
-        if (name != null && name.trim().length === 0) {
-            name = null;
+
+        if (name !== undefined && name.trim().length === 0) {
+            name = undefined;
         }
 
-        const normalizedConfig = this.buildNormalizedConfig(mapName, type, name, normalizedAttributeNames);
+        const normalizedConfig = this.buildNormalizedConfig(mapName, type, config, name, normalizedAttributeNames);
         if (type === IndexType.BITMAP) {
-            let uniqueKey = config.bitmapIndexOptions.uniqueKey;
+            let uniqueKey = config.bitmapIndexOptions?.uniqueKey;
 
-            this.validateAttribute(config.name, uniqueKey);
-            uniqueKey = this.canonicalizeAttribute(uniqueKey);
+            this.validateAttribute(config, uniqueKey);
+            // Validation ensures uniqueKey is not undefined.
+            uniqueKey = this.canonicalizeAttribute(uniqueKey as string);
 
             normalizedConfig.bitmapIndexOptions.uniqueKey = uniqueKey;
-            normalizedConfig.bitmapIndexOptions.uniqueKeyTransformation =
-                tryGetEnum(UniqueKeyTransformation, config.bitmapIndexOptions.uniqueKeyTransformation);
+            normalizedConfig.bitmapIndexOptions.uniqueKeyTransformation = config.bitmapIndexOptions?.uniqueKeyTransformation ?
+                Util.tryGetEnum(UniqueKeyTransformation, config.bitmapIndexOptions.uniqueKeyTransformation) :
+                DEFAULT_UNIQUE_KEY_TRANSFORMATION;
         }
         return normalizedConfig;
     }
@@ -113,16 +120,16 @@ export class IndexUtil {
      * @param indexName Index name.
      * @param attributeName Attribute name.
      */
-    static validateAttribute(config: IndexConfig, attributeName: string): void {
-        if (attributeName == null) {
-            throw new TypeError('Attribute name cannot be null: ' + JSON.stringify(config));
+    static validateAttribute(config: IndexConfig, attributeName: string | undefined): void {
+        if (attributeName === undefined) {
+            throw new TypeError('Attribute name cannot be undefined: ' + Util.convertObjectToString(config));
         }
         const attributeName0 = attributeName.trim();
         if (attributeName0.length === 0) {
-            throw new TypeError('Attribute name cannot be empty: ' + JSON.stringify(config));
+            throw new TypeError('Attribute name cannot be empty: ' + Util.convertObjectToString(config));
         }
         if (attributeName0.endsWith('.')) {
-            throw new TypeError('Attribute name cannot end with dot [config= ' + JSON.stringify(config)
+            throw new TypeError('Attribute name cannot end with dot [config= ' + Util.convertObjectToString(config)
                 + ', attribute=' + attributeName + ']');
         }
     }
@@ -140,28 +147,25 @@ export class IndexUtil {
 
     private static buildNormalizedConfig(mapName: string,
                                          indexType: IndexType,
-                                         indexName: string,
+                                         config: IndexConfig,
+                                         indexName: string | undefined,
                                          normalizedAttributeNames: string[]): InternalIndexConfig {
-        const newConfig = new InternalIndexConfig();
-        newConfig.bitmapIndexOptions = new InternalBitmapIndexOptions();
-        newConfig.type = indexType;
+        const attributes = [];
 
-        let name = indexName == null ? mapName + '_' + this.indexTypeToName(indexType) : null;
+        let name = indexName === undefined ? mapName + '_' + this.indexTypeToName(indexType) : undefined;
         for (const normalizedAttributeName of normalizedAttributeNames) {
-            this.validateAttribute(indexName, normalizedAttributeName)
-            newConfig.attributes.push(normalizedAttributeName);
-            if (name != null) {
+            this.validateAttribute(config, normalizedAttributeName)
+            attributes.push(normalizedAttributeName);
+            if (name !== undefined) {
                 name += '_' + normalizedAttributeName;
             }
         }
 
-        if (name != null) {
+        if (name !== undefined) {
             indexName = name;
         }
 
-        newConfig.name = indexName;
-
-        return newConfig;
+        return new InternalIndexConfig(indexName, indexType, attributes, new InternalBitmapIndexOptions());
     }
 
     private static indexTypeToName(indexType: IndexType): string {

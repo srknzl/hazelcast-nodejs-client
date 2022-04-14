@@ -64,15 +64,15 @@ export class InternalIndexConfig {
      */
     public static readonly DEFAULT_TYPE = IndexType.SORTED;
 
-    name: string;
-    type: IndexType = InternalIndexConfig.DEFAULT_TYPE;
-    attributes: string[] = [];
-    bitmapIndexOptions: InternalBitmapIndexOptions;
+    readonly name: string;
+    readonly type: IndexType ;
+    readonly attributes: string[];
+    readonly bitmapIndexOptions: InternalBitmapIndexOptions;
 
-    constructor(name?: string,
-                type?: IndexType,
-                attributes?: string[],
-                bitmapIndexOptions?: InternalBitmapIndexOptions) {
+    constructor(name: string | null | undefined,
+                type: IndexType = InternalIndexConfig.DEFAULT_TYPE,
+                attributes: string[] = [],
+                bitmapIndexOptions: InternalBitmapIndexOptions | null) {
         if (name) {
             this.name = name;
         }
@@ -87,22 +87,24 @@ export class InternalIndexConfig {
 
         if (bitmapIndexOptions) {
             this.bitmapIndexOptions = bitmapIndexOptions;
+        } else {
+            this.bitmapIndexOptions = new InternalBitmapIndexOptions();
         }
     }
 
     toString(): string {
-        let bitmapIndexOptions: string;
-        if (this.bitmapIndexOptions == null) {
-            bitmapIndexOptions = undefined;
+        let bitmapIndexOptionsString: string;
+        if (this.bitmapIndexOptions === undefined) {
+            bitmapIndexOptionsString = 'undefined';
         } else {
-            bitmapIndexOptions = this.bitmapIndexOptions.toString();
+            bitmapIndexOptionsString = this.bitmapIndexOptions.toString();
         }
 
         return 'IndexConfig[' +
             'name: ' + this.name +
             ', type: ' + this.type +
             ', attributes: ' + this.attributes +
-            ', bitmapIndexOptions: ' + bitmapIndexOptions +
+            ', bitmapIndexOptions: ' + bitmapIndexOptionsString +
             ']';
     }
 

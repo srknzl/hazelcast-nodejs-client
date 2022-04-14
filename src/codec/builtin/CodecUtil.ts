@@ -41,7 +41,7 @@ export class CodecUtil {
         }
     }
 
-    static decodeNullable<T>(clientMessage: ClientMessage, decoder: (msg: ClientMessage) => T): T {
+    static decodeNullable<T>(clientMessage: ClientMessage, decoder: (msg: ClientMessage) => T): T | null {
         return CodecUtil.nextFrameIsNullFrame(clientMessage) ? null : decoder(clientMessage);
     }
 

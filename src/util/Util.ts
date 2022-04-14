@@ -67,6 +67,15 @@ export function shuffleArray<T>(array: T[]): void {
 }
 
 /** @internal */
+export function convertObjectToString(obj: any): string {
+    try {
+        return JSON.stringify(obj);
+    } catch (e) {
+        return obj.toString();
+    }
+}
+
+/** @internal */
 export function getType(obj: any): string {
     if (Long.isLong(obj)) {
         return 'long';
