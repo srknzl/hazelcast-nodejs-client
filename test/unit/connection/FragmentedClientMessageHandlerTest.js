@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ const cm = require('../../../lib/protocol/ClientMessage');
 const { FixSizedTypesCodec } = require('../../../lib/codec/builtin/FixSizedTypesCodec');
 
 describe('FragmentedClientMessageHandlerTest', function () {
-
     let reader;
     let handler;
 
@@ -174,5 +173,4 @@ describe('FragmentedClientMessageHandlerTest', function () {
         fragment.addFrame(frame);
         return fragment;
     };
-
 });

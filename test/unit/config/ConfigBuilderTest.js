@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 'use strict';
 
-const { expect } = require('chai');
+const { expect, should } = require('chai');
+should();
 const path = require('path');
 
 const {
@@ -26,14 +27,15 @@ const {
     TopicOverloadPolicy
 } = require('../../../');
 const { ConfigBuilder } = require('../../../lib/config/ConfigBuilder');
+const { InvalidConfigurationError } = require('../../../lib/core/HazelcastError');
 const {
     getSocketAddresses,
     createAddressFromString
 } = require('../../../lib/util/AddressUtil');
 const { ReconnectMode } = require('../../../lib/config/ConnectionStrategyConfig');
+const {TokenEncoding} = require('../../../lib/security/TokenEncoding');
 
 describe('ConfigBuilderTest', function () {
-
     let fullConfig;
     const lifecycleListener = () => {};
     const membershipListener = {
@@ -43,9 +45,15 @@ describe('ConfigBuilderTest', function () {
     const dataSerializableFactory = () => {};
     const portableFactory = () => {};
     const customSerializer = {
-        id: 3
+        id: 3,
+        read: () => {},
+        write: () => {}
     };
-    const globalSerializer = {};
+    const globalSerializer = {
+        id: 44,
+        read: () => {},
+        write: () => {}
+    };
     const customLoadBalancer = {
         initLoadBalancer: () => {},
         next: () => {}
@@ -239,5 +247,746 @@ describe('ConfigBuilderTest', function () {
         const loadBalancer = fullConfig.loadBalancer;
         expect(loadBalancer.type).to.equal(LoadBalancerType.RANDOM);
         expect(loadBalancer.customLoadBalancer).to.equal(customLoadBalancer);
+    });
+
+    it('security', function () {
+        const security = fullConfig.security;
+        const usernamePasswordCredentials = security.usernamePassword;
+        expect(usernamePasswordCredentials.username).to.equal('username');
+        expect(usernamePasswordCredentials.password).to.equal('password');
+    });
+});
+
+describe('ConfigBuilderValidationTest', function () {
+    describe('connectionRetryConfig', function () {
+        it('should validate initial backoff', function () {
+            const invalidValues = [-1, undefined, null, -0.1, [], {}];
+            const validValues = [0.1, 1, 12, 123123, 12.2131];
+            for (const invalidValue of invalidValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            initialBackoffMillis: invalidValue
+                        }
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'Initial backoff');
+            }
+            for (const validValue of validValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            initialBackoffMillis: validValue
+                        }
+                    }
+                }).build()).not.to.throw();
+            }
+        });
+
+        it('should validate max backoff', function () {
+            const invalidValues = [-1, undefined, null, -0.1, [], {}];
+            const validValues = [0.1, 1, 12, 123123, 12.2131];
+            for (const invalidValue of invalidValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            maxBackoffMillis: invalidValue
+                        }
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'Max backoff');
+            }
+            for (const validValue of validValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            maxBackoffMillis: validValue
+                        }
+                    }
+                }).build()).not.to.throw();
+            }
+        });
+
+        it('should validate multiplier', function () {
+            const invalidValues = [-1, undefined, null, -0.1, [], {}, 0.99, 0.21];
+            const validValues = [1, 12, 123123, 12.2131];
+            for (const invalidValue of invalidValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            multiplier: invalidValue
+                        }
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'Multiplier');
+            }
+            for (const validValue of validValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            multiplier: validValue
+                        }
+                    }
+                }).build()).not.to.throw();
+            }
+        });
+
+        it('should validate cluster connect timeout', function () {
+            const invalidValues = [-2, undefined, null, -0.1, [], {}, -13];
+            const validValues = [-1, 0.1, 1, 12, 123123, 12.2131, 0];
+            for (const invalidValue of invalidValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            clusterConnectTimeoutMillis: invalidValue
+                        }
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'ClusterConnectTimeoutMillis');
+            }
+            for (const validValue of validValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            clusterConnectTimeoutMillis: validValue
+                        }
+                    }
+                }).build()).not.to.throw();
+            }
+        });
+
+        it('should validate jitter', function () {
+            const invalidValues = [-1, undefined, null, -0.1, [], {}, 1.01, 123];
+            const validValues = [0.1, 0, 0.3, 0.99, 1];
+            for (const invalidValue of invalidValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            jitter: invalidValue
+                        }
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'Jitter');
+            }
+            for (const validValue of validValues) {
+                expect(() => new ConfigBuilder({
+                    connectionStrategy: {
+                        connectionRetry: {
+                            jitter: validValue
+                        }
+                    }
+                }).build()).not.to.throw();
+            }
+        });
+    });
+
+    describe('properties', function () {
+        const propsAcceptingNumber = [
+            'hazelcast.client.heartbeat.interval',
+            'hazelcast.client.heartbeat.timeout',
+            'hazelcast.client.invocation.retry.pause.millis',
+            'hazelcast.client.invocation.timeout.millis',
+            'hazelcast.client.internal.clean.resources.millis',
+            'hazelcast.client.statistics.period.seconds',
+            'hazelcast.invalidation.reconciliation.interval.seconds',
+            'hazelcast.invalidation.max.tolerated.miss.count',
+            'hazelcast.invalidation.min.reconciliation.interval.seconds',
+            'hazelcast.client.autopipelining.threshold.bytes',
+            'hazelcast.client.operation.backup.timeout.millis',
+        ];
+
+        const propsAcceptingBoolean = [
+            'hazelcast.client.statistics.enabled',
+            'hazelcast.client.autopipelining.enabled',
+            'hazelcast.client.socket.no.delay',
+            'hazelcast.client.shuffle.member.list',
+            'hazelcast.client.operation.fail.on.indeterminate.state',
+        ];
+
+        const params = [
+            ...propsAcceptingNumber.map(p => {
+                return {
+                    property: p,
+                    validValues: [1, 2, 22.2, 122323123, Number.MAX_SAFE_INTEGER],
+                    invalidValues: [null, undefined, '1', '2', [], {}]
+                };
+            }),
+            ...propsAcceptingBoolean.map(p => {
+                return {
+                    property: p,
+                    validValues: [true, false],
+                    invalidValues: [1, 1.11, null, undefined, '1', '2', [], {}]
+                };
+            }),
+            {
+                property: 'hazelcast.client.cloud.url',
+                validValues: ['1', 'https://example.org'],
+                invalidValues: [1, 1.11, null, undefined, [], {}, true]
+            },
+            {
+                property: 'hazelcast.logging.level',
+                validValues: ['OFF', 'ERROR', 'WARN', 'INFO', 'DEBUG', 'TRACE'],
+                invalidValues: [1, 1.11, null, undefined, [], {}, true, 'someOtherString']
+            },
+            {
+                property: 'hazelcast.discovery.public.ip.enabled',
+                validValues: [true, false, null],
+                invalidValues: [1, 1.11, 'OFF', undefined, '1', '2', [], {}]
+            }
+        ];
+
+        for (const param of params) {
+            it(`should validate "${param.property}"`, function () {
+                for (const invalidValue of param.invalidValues) {
+                    expect(() => new ConfigBuilder({
+                        properties: {
+                            [param.property]: invalidValue
+                        }
+                    }).build()).to.throw(InvalidConfigurationError, 'Property validation error');
+                }
+
+                for (const validValue of param.validValues) {
+                    expect(() => new ConfigBuilder({
+                        properties: {
+                            [param.property]: validValue
+                        }
+                    }).build()).not.to.throw();
+                }
+            });
+        }
+
+        describe('statistics', function () {
+            it('should use statistics if both statistics and metrics set enabled', function () {
+                expect(new ConfigBuilder({
+                    metrics: {
+                        enabled: true
+                    },
+                    properties: {
+                        'hazelcast.client.statistics.enabled': false,
+                    }
+                }).build().metrics.enabled).to.be.false;
+
+                expect(new ConfigBuilder({
+                    metrics: {
+                        enabled: false
+                    },
+                    properties: {
+                        'hazelcast.client.statistics.enabled': true,
+                    }
+                }).build().metrics.enabled).to.be.true;
+
+                expect(new ConfigBuilder({
+                    metrics: {
+                        enabled: true
+                    },
+                    properties: {
+                        'hazelcast.client.statistics.enabled': true,
+                    }
+                }).build().metrics.enabled).to.be.true;
+
+                expect(new ConfigBuilder({
+                    metrics: {
+                        enabled: false
+                    },
+                    properties: {
+                        'hazelcast.client.statistics.enabled': false,
+                    }
+                }).build().metrics.enabled).to.be.false;
+
+                () => new ConfigBuilder({
+                    metrics: {
+                        collectionFrequencySeconds: 1
+                    },
+                    properties: {
+                        'hazelcast.client.statistics.period.seconds': 2,
+                    }
+                }).build().metrics.collectionFrequencySeconds.should.be.eq(2);
+            });
+
+            it('should behave correctly when statistics properties and metrics setting options', function () {
+                const defaultConfig = new ConfigBuilder();
+
+                // uses metrics config by default
+                defaultConfig.build().metrics.enabled.should.be.true;
+                defaultConfig.build().metrics.collectionFrequencySeconds.should.be.eq(5);
+
+                new ConfigBuilder({
+                    metrics: {
+                        enabled: true
+                    }
+                }).build().metrics.enabled.should.be.true;
+
+                new ConfigBuilder({
+                    properties: {
+                        'hazelcast.client.statistics.enabled': true,
+                    }
+                }).build().metrics.enabled.should.be.true;
+
+                new ConfigBuilder({
+                    metrics: {
+                        enabled: false
+                    }
+                }).build().metrics.enabled.should.be.false;
+
+                new ConfigBuilder({
+                    properties: {
+                        'hazelcast.client.statistics.enabled': false,
+                    }
+                }).build().metrics.enabled.should.be.false;
+
+                new ConfigBuilder({
+                    metrics: {
+                        collectionFrequencySeconds: 999
+                    }
+                }).build().metrics.collectionFrequencySeconds.should.be.eq(999);
+
+                new ConfigBuilder({
+                    properties: {
+                        'hazelcast.client.statistics.period.seconds': 999,
+                    }
+                }).build().metrics.collectionFrequencySeconds.should.be.eq(999);
+            });
+
+            it('should throw error on non-positive frequency', function () {
+                [-1, 0].forEach(frequency => {
+                    expect(() => new ConfigBuilder({
+                        metrics: {
+                            collectionFrequencySeconds: frequency
+                        }
+                    }).build()).to.throw(InvalidConfigurationError, 'must be positive');
+                });
+            });
+        });
+    });
+
+    describe('networkConfig', function () {
+       it('should validate sslOptionsFactory', function () {
+           const invalidSSLFactories = [() => {}, 1, '1', {
+               init: () => {}
+           }];
+
+           for (const invalidSSLFactory of invalidSSLFactories) {
+               expect(() => new ConfigBuilder({
+                   network: {
+                       ssl: {
+                           enabled: true,
+                           sslOptionsFactory: invalidSSLFactory,
+                           sslOptionsFactoryProperties: {}
+                       }
+                   }
+               }).build()).to.throw(InvalidConfigurationError, 'Invalid SSLOptionsFactory given');
+           }
+
+           const validFactory = {
+               init: () => {},
+               getSSLOptions: () => {}
+           };
+
+           expect(() => new ConfigBuilder({
+               network: {
+                   ssl: {
+                       enabled: true,
+                       sslOptionsFactory: validFactory,
+                       sslOptionsFactoryProperties: {}
+                   }
+               }
+           }).build()).not.to.throw();
+       });
+    });
+
+    describe('loadBalancerConfig', function () {
+        it('should validate custom load balancer config', function () {
+            const invalidCustomLoadBalancers = [
+                () => {}, 1, undefined, '1', { initLoadBalancer: () => {}}, { next: () => {} }
+            ];
+
+            for (const invalidCustomLoadBalancer of invalidCustomLoadBalancers) {
+                expect(() => new ConfigBuilder({
+                    loadBalancer: {
+                        customLoadBalancer: invalidCustomLoadBalancer
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'Invalid LoadBalancer given');
+            }
+
+            const validCustomLoadBalancer = {
+                initLoadBalancer: () => {},
+                next: () => {}
+            };
+
+            expect(() => new ConfigBuilder({
+                loadBalancer: {
+                    customLoadBalancer: validCustomLoadBalancer
+                }
+            }).build()).not.to.throw();
+        });
+    });
+
+    describe('serialization', function () {
+        it('should validate portable and data serializable factories', function () {
+            const invalidFactoriesArray = [
+                () => {}, 1, undefined, '1', { aaasd: () => {}}, { 1.1: () => {}, 2: () => {} }
+            ];
+
+            for (const invalidFactories of invalidFactoriesArray) {
+                expect(() => new ConfigBuilder({
+                    serialization: {
+                        portableFactories: invalidFactories
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'portable');
+
+                expect(() => new ConfigBuilder({
+                    serialization: {
+                        dataSerializableFactories: invalidFactories
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'dataSerializable');
+            }
+
+            const validFactories = {
+                1: () => {},
+                2: () => {}
+            };
+
+            expect(() => new ConfigBuilder({
+                serialization: {
+                    portableFactories: validFactories
+                }
+            }).build()).not.to.throw();
+
+            expect(() => new ConfigBuilder({
+                serialization: {
+                    dataSerializableFactories: validFactories
+                }
+            }).build()).not.to.throw();
+        });
+
+        it('should validate custom serializers', function () {
+            const invalidCustomSerializersArray = [
+                () => {}, 1, undefined, '1', { initLoadBalancer: () => {}}, [{
+                    read: () => {},
+                    write: () => {}
+                }],
+                [{
+                    id: 1,
+                    write: () => {}
+                }]
+            ];
+
+            for (const invalidCustomSerializers of invalidCustomSerializersArray) {
+                expect(() => new ConfigBuilder({
+                    serialization: {
+                        customSerializers: invalidCustomSerializers
+                    }
+                }).build()).to.throw(InvalidConfigurationError, /(not an array|Invalid custom serializer)/);
+            }
+
+            const validCustomSerializers = [
+                {
+                    id: 1,
+                    read: () => {},
+                    write: () => {}
+                },
+                {
+                    id: 1,
+                    read: () => {},
+                    write: () => {}
+                }
+            ];
+
+            expect(() => new ConfigBuilder({
+                serialization: {
+                    customSerializers: validCustomSerializers
+                }
+            }).build()).not.to.throw();
+        });
+
+        it('should validate the global serializer', function () {
+            const invalidGlobalSerializers = [
+                () => {}, 1, undefined, '1', { initLoadBalancer: () => {}}, { read: () => {}, write: () => {} },
+                { id: 1, write: () => {} }, {}
+            ];
+
+            for (const invalidGlobalSerializer of invalidGlobalSerializers) {
+                expect(() => new ConfigBuilder({
+                    serialization: {
+                        globalSerializer: invalidGlobalSerializer
+                    }
+                }).build()).to.throw(InvalidConfigurationError, 'Invalid global serializer');
+            }
+
+            const validGlobalSerializer = {
+                id: 1,
+                read: () => {},
+                write: () => {}
+            };
+
+            expect(() => new ConfigBuilder({
+                serialization: {
+                    globalSerializer: validGlobalSerializer
+                }
+            }).build()).not.to.throw();
+        });
+    });
+
+    it('should validate lifecycleListeners', function () {
+        const invalidLifecycleListenersArray = [undefined, 1, '1', {}, [1], [() => {}, 1]];
+
+        for (const invalidLifecycleListeners of invalidLifecycleListenersArray) {
+            expect(() => new ConfigBuilder({
+                lifecycleListeners: invalidLifecycleListeners
+            }).build()).to.throw(InvalidConfigurationError, /(Lifecycle listener|not an array)/);
+        }
+
+        const validLifecycleListeners = [() => {}, () => {}];
+
+        expect(() => new ConfigBuilder({
+            lifecycleListeners: validLifecycleListeners
+        }).build()).not.to.throw();
+    });
+
+    it('should validate membershipListeners', function () {
+        const invalidMembershipListenersArray = [undefined, 1, '1', {}, [1], [{}]];
+
+        for (const invalidMembershipListeners of invalidMembershipListenersArray) {
+            expect(() => new ConfigBuilder({
+                membershipListeners: invalidMembershipListeners
+            }).build()).to.throw(InvalidConfigurationError, /(membershipListener|not an array)/);
+        }
+
+        const validMembershipListeners = [{memberAdded: () => {}}, {memberAdded: () => {}, memberRemoved: () => {}}];
+
+        expect(() => new ConfigBuilder({
+            membershipListeners: validMembershipListeners
+        }).build()).not.to.throw();
+    });
+
+    it('should validate custom logger', function () {
+        const invalidCustomLoggers = [undefined, 1, '1', {}, [1], [{}], {log: () => {}, error: () => {}}];
+
+        for (const invalidLogger of invalidCustomLoggers) {
+            expect(() => new ConfigBuilder({
+                customLogger: invalidLogger
+            }).build()).to.throw(InvalidConfigurationError, 'custom logger');
+        }
+
+        const validCustomLogger = {
+            log: () => {}, error: () => {}, warn: () => {}, info: () => {}, debug: () => {},
+            trace: () => {}
+        };
+
+        expect(() => new ConfigBuilder({
+            customLogger: validCustomLogger
+        }).build()).not.to.throw();
+    });
+
+    it('should throw InvalidConfigurationError when invalid top level config key is passed', function () {
+        expect(() => new ConfigBuilder({
+            a: 1
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected config key');
+    });
+
+    it('should throw InvalidConfigurationError when invalid network config key is passed', function () {
+        expect(() => new ConfigBuilder({
+            network: {
+                a: 1
+            }
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected network option');
+    });
+
+    it('should throw InvalidConfigurationError when invalid connectionStrategy config key is passed', function () {
+        expect(() => new ConfigBuilder({
+            connectionStrategy: {
+                a: 1
+            }
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected connection strategy config');
+    });
+
+    it('should throw InvalidConfigurationError when invalid loadBalancer config key is passed', function () {
+        expect(() => new ConfigBuilder({
+            loadBalancer: {
+                a: 1
+            }
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected load balancer config');
+    });
+
+    it('should throw InvalidConfigurationError when invalid serialization config key is passed', function () {
+        expect(() => new ConfigBuilder({
+            serialization: {
+                a: 1
+            }
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected serialization config');
+    });
+
+    it('should throw InvalidConfigurationError when invalid distributed objects config key is passed', function () {
+        expect(() => new ConfigBuilder({
+            nearCaches: [
+                {
+                    nearCache1: {
+                        a: 1
+                    }
+                }
+            ]
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected near cache config');
+
+        expect(() => new ConfigBuilder({
+            reliableTopics: [
+                {
+                    reliableTopic1: {
+                        a: 1
+                    }
+                }
+            ]
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected reliable topic config');
+
+        expect(() => new ConfigBuilder({
+            flakeIdGenerators: [
+                {
+                    flakeIdGenerator1: {
+                        a: 1
+                    }
+                }
+            ]
+        }).build()).to.throw(InvalidConfigurationError, 'Unexpected flake id generator config');
+    });
+
+    it('should validate security config', function () {
+        const invalidConfigs = [
+            {
+                'security': {
+                    'somethingElse': false
+                }
+            },
+            {
+                'security': {
+                    'usernamePassword': {
+                        'username': false,
+                        'password': 'password'
+                    }
+                }
+            },
+            {
+                'security': {
+                    'usernamePassword': {
+                        'username': 'username',
+                        'password': false
+                    }
+                }
+            },
+            {
+                'security': {
+                    'usernamePassword': {
+                        'username': 'username',
+                        'password': 'password',
+                        'extraField': true
+                    }
+                }
+            },
+            {
+                'security': {
+                    'token': {
+                        'token': 'token',
+                        'encoding': 'not-a-valid-encoding'
+                    }
+                }
+            },
+            {
+                'security': {
+                    'token': {
+                        'token': 123,
+                        'encoding': TokenEncoding.ASCII
+                    }
+                }
+            },
+            {
+                'security': {
+                    'token': {
+                        'token': 'token',
+                        'encoding': 123
+                    }
+                }
+            },
+            // token field is mandatory
+            {
+                'security': {
+                    'token': {
+                        'encoding': TokenEncoding.ASCII
+                    }
+                }
+            },
+            {
+                'security': {
+                    'token': {
+                        'token': 'token',
+                        'encoding': TokenEncoding.ASCII,
+                        'extraField': true
+                    }
+                }
+            }
+        ];
+
+        for (const config of invalidConfigs) {
+            expect(() => new ConfigBuilder(config).build()).to.throw(InvalidConfigurationError);
+        }
+    });
+
+    it('should throw when customCredentials and security are used together', function () {
+        expect(() => new ConfigBuilder({
+            'customCredentials': {},
+            'security': {
+                'username': {
+                    'username': 'username',
+                    'password': 'password',
+                }
+            }
+        }).build()).to.throw(InvalidConfigurationError, 'Ambiguous security configuration is found');
+    });
+
+    it('should throw when multiple security configurations are used together', function () {
+        const invalidConfigs = [
+            {
+                'security': {
+                    'usernamePassword': {
+                        'username': 'username',
+                        'password': 'password',
+                    },
+                    'token': {
+                        'token': 'token',
+                    }
+                }
+            },
+            {
+                'security': {
+                    'usernamePassword': {
+                        'username': 'username',
+                        'password': 'password',
+                    },
+                    'custom': {
+                        'field': 'value',
+                    }
+                }
+            },
+            {
+                'security': {
+                    'token': {
+                        'token': 'token',
+                    },
+                    'custom': {
+                        'field': 'value',
+                    }
+                }
+            },
+            {
+                'security': {
+                    'usernamePassword': {
+                        'username': 'username',
+                        'password': 'password',
+                    },
+                    'token': {
+                        'token': 'token',
+                    },
+                    'custom': {
+                        'field': 'value',
+                    }
+                }
+            }
+        ];
+
+        for (const config of invalidConfigs) {
+            expect(() => new ConfigBuilder(config).build()).to.throw(InvalidConfigurationError, 'Multiple credential types');
+        }
     });
 });

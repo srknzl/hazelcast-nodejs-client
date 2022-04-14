@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ const { SerializationServiceV1 } = require('../../../lib/serialization/Serializa
 const TestUtil = require('../../TestUtil');
 
 class IdentifiedDataClass {
-
     constructor(a_byte, a_boolean, a_character, a_short, an_integer,
                 a_long, a_float, a_double, a_string, bytes, booleans,
                 chars, shorts, integers, longs, floats, doubles, strings) {
@@ -91,11 +90,9 @@ class IdentifiedDataClass {
         outp.writeDoubleArray(this.doubles);
         outp.writeStringArray(this.strings);
     }
-
 }
 
 describe('IdentifiedDataSerializableTest', function () {
-
     const identifiedFactory = (classId) => {
         if (classId === 1) {
             return new IdentifiedDataClass();

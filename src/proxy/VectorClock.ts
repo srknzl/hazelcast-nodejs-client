@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,10 @@ export class VectorClock {
     isAfter(other: VectorClock): boolean {
         let atLeastOneBigger = false;
         other.replicaTimestamps.forEach((otherTimestamp: Long, replicaId: string) => {
-            const thisTimetamp = this.replicaTimestamps.get(replicaId);
-            if (thisTimetamp == null || otherTimestamp.greaterThan(thisTimetamp)) {
+            const thisTimestamp = this.replicaTimestamps.get(replicaId);
+            if (thisTimestamp == null || otherTimestamp.greaterThan(thisTimestamp)) {
                 return false;
-            } else if (otherTimestamp.lessThan(thisTimetamp)) {
+            } else if (otherTimestamp.lessThan(thisTimestamp)) {
                 atLeastOneBigger = true;
             }
         });

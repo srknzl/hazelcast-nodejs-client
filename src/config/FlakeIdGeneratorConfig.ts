@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ export interface FlakeIdGeneratorConfig {
      * Defines for how long the pre-fetched IDs can be used. If this time elapsed,
      * a new batch of IDs will be fetched. Time unit is milliseconds. By default,
      * set to `600000` (10 minutes).
-     * <p>
+     *
      * The IDs contain timestamp component, which ensures rough global ordering of IDs. If an ID
      * is assigned to an object that was created much later, it will be much out of order. If you don't care
      * about ordering, set this value to `0` for unlimited ID validity.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,7 @@ const { Client } = require('hazelcast-client');
 const path = require('path');
 
 (async () => {
-    try {
-        const cfg = {
+    const cfg = {
             clusterName: 'hazelcast',
             network: {
                 hazelcastCloud: {
@@ -37,16 +36,16 @@ const path = require('path');
                     }
                 }
             }
-        };
-        const client = await Client.newHazelcastClient(cfg);
+    };
+    const client = await Client.newHazelcastClient(cfg);
 
-        const map = await client.getMap('testMap');
-        await map.put('key', 'value');
-        const value = await map.get('key');
-        console.log(value);
+    const map = await client.getMap('testMap');
+    await map.put('key', 'value');
+    const value = await map.get('key');
+    console.log(value);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

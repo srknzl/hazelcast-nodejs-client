@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,9 @@ import {DistributedObject} from '../core';
  * in case of CP member failures. It can be tuned to offer at-most-once
  * execution semantics. Please see `fail-on-indeterminate-operation-state`
  * server-side setting.
+ *
+ * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
+ * serializer for a certain type.
  */
 export interface IAtomicReference<E> extends DistributedObject {
 

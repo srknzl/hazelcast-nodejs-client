@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,16 @@ import {DistributedObject} from '../core';
 
 /**
  * Concurrent, distributed, observable queue.
+ *
+ * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
+ * serializer for a certain type.
  */
 export interface IQueue<E> extends DistributedObject {
     /**
      * Adds given item to the end of the queue. Operation is successful only
      * if queue has required capacity.
      * @param item element to add.
-     * @throws `IllegalStateError` if queue is full.
+     * @throws {@link IllegalStateError} if queue is full.
      * @return `true`.
      */
     add(item: E): Promise<boolean>;
@@ -55,7 +58,7 @@ export interface IQueue<E> extends DistributedObject {
     /**
      * Returns `true` if this queue contains the given item.
      * @param item
-     * @return `true` if this queue containse the item, `false` otherwise.
+     * @return `true` if this queue contains the item, `false` otherwise.
      */
     contains(item: E): Promise<boolean>;
 
@@ -98,14 +101,15 @@ export interface IQueue<E> extends DistributedObject {
 
     /**
      * Retrieves and removes the top of this queue.
-     * @param time operation waits upto `time` milliseconds if this queue is empty.
+     * @param time operation waits upto `time` milliseconds if this queue is empty. The default value of this parameter is `0`,
+     * which means no waiting.
      * @return the head of this queue or `null` if no element is available.
      */
     poll(time?: number): Promise<E>;
 
     /**
      * Inserts the item at the end of this queue. It waits to return until
-     * space becomes available if neccessary.
+     * space becomes available if necessary.
      * @param item
      */
     put(item: E): Promise<void>;
@@ -151,9 +155,8 @@ export interface IQueue<E> extends DistributedObject {
     size(): Promise<number>;
 
     /**
-     * Retrieves and removes the head of this queue. It waits to return until
-     * an element becomes available if neccessary.
-     * @param item
+     * Retrieves and removes the head of this queue, waiting if necessary
+     * until an element becomes available.
      * @return head of the queue.
      */
     take(): Promise<E>;

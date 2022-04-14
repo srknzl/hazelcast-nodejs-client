@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -78,7 +78,7 @@ export class HazelcastCloudDiscovery {
                 dataAsAString += chunk;
             });
             res.on('end', () => {
-                deferred.resolve(this.parseResponse(dataAsAString));
+                deferred.resolve(HazelcastCloudDiscovery.parseResponse(dataAsAString));
             });
         });
 
@@ -92,7 +92,7 @@ export class HazelcastCloudDiscovery {
         return deferred.promise;
     }
 
-    private parseResponse(data: string): Map<string, AddressImpl> {
+    private static parseResponse(data: string): Map<string, AddressImpl> {
         const jsonValue = JSON.parse(data);
 
         const privateToPublicAddresses: Map<string, AddressImpl> = new Map<string, AddressImpl>();

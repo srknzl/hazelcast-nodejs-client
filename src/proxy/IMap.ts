@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,9 @@ import {IndexConfig} from '../config/IndexConfig';
 
 /**
  * Concurrent, distributed, observable and queryable map.
+ *
+ * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
+ * serializer for a certain type.
  */
 export interface IMap<K, V> extends DistributedObject {
 
@@ -44,6 +47,7 @@ export interface IMap<K, V> extends DistributedObject {
      *
      * @param aggregator aggregator to aggregate the entries with
      * @param <R> type of the result
+     * @throws AssertionError if `aggregator` is `null`
      * @returns the result of the given type
      */
     aggregate<R>(aggregator: Aggregator<R>): Promise<R>;
@@ -61,6 +65,7 @@ export interface IMap<K, V> extends DistributedObject {
      *
      * @param aggregator aggregator to aggregate the entries with
      * @param predicate predicate to filter the entries with
+     * @throws AssertionError if `aggregator` or `predicate` is `null`
      * @param <R> type of the result
      * @returns the result of the given type
      */
@@ -114,6 +119,8 @@ export interface IMap<K, V> extends DistributedObject {
      * Until the index finishes being created, any searches for the attribute will use a full Map scan,
      * thus avoiding using a partially built index and returning incorrect results.
      *
+     * @throws AssertionError if `indexConfig` is `null`
+     * @throws TypeError If the specified index configuration is invalid.
      * @param indexConfig Index configuration.
      */
     addIndex(indexConfig: IndexConfig): Promise<void>;
@@ -122,7 +129,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Returns `true` if this map has an item associated with key.
      *
      * @param key the key of the map entry
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      * @returns `true` if the map contains the key, `false` otherwise
      */
     containsKey(key: K): Promise<boolean>;
@@ -131,7 +138,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Returns `true` if this map has key(s) associated with given value.
      *
      * @param value the value of the map entry
-     * @throws RangeError if `value` is `null` or `undefined`
+     * @throws AssertionError if `value` is `null`
      * @returns `true` if the map has key or keys associated with given value
      */
     containsValue(value: V): Promise<boolean>;
@@ -163,8 +170,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param maxIdle optional maximum time in milliseconds for this entry to
      *                stay idle in the map. `0` means infinite, negative means
      *                map config default.
-     * @throws RangeError if `key` or `value` is `undefined` or `null`
-     *                    or `ttl` is negative
+     * @throws AssertionError if `key` or `value` is `null`
      * @returns old value if there was any, `null` otherwise
      */
     put(key: K, value: V, ttl?: number | Long, maxIdle?: number | Long): Promise<V>;
@@ -198,6 +204,7 @@ export interface IMap<K, V> extends DistributedObject {
      * if the write-behind queue has reached its per-node maximum capacity.
      *
      * @param pairs entries to be put
+     * @throws AssertionError if any key or value in the specified array is `null`
      */
     putAll(pairs: Array<[K, V]>): Promise<void>;
 
@@ -226,8 +233,10 @@ export interface IMap<K, V> extends DistributedObject {
      * turned off, this call may be rejected with `ReachedMaxSizeError`
      * if the write-behind queue has reached its per-node maximum capacity.
      *
+     * Works with Hazelcast versions 4.1 and above.
+     *
      * @param pairs entries to be put
-     * @requires Hazelcast IMDG 4.1
+     * @throws AssertionError if any key or value in the specified array is `null`
      */
     setAll(pairs: Array<[K, V]>): Promise<void>;
 
@@ -235,7 +244,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Retrieves the value associated with given key.
      *
      * @param key the key of the map entry
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      * @returns value associated with key, `null` if the key does not exist
      */
     get(key: K): Promise<V>;
@@ -244,6 +253,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Retrieves key value pairs of given keys.
      *
      * @param keys the array of keys
+     * @throws AssertionError if `keys` is null or `keys` is not an array.
      */
     getAll(keys: K[]): Promise<Array<[K, V]>>;
 
@@ -254,7 +264,7 @@ export interface IMap<K, V> extends DistributedObject {
      *
      * @param key the key of the map entry
      * @param value expected value
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      * @returns value associated with key, `null` if the key did not exist
      *          before. If optional value is specified, a `boolean` representing
      *          whether or not entry is removed is returned
@@ -267,7 +277,7 @@ export interface IMap<K, V> extends DistributedObject {
      * of the returned value.
      *
      * @param key the key of the map entry
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      */
     delete(key: K): Promise<void>;
 
@@ -297,6 +307,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Specified predicate runs on all members in parallel.
      *
      * @param predicate specified query criteria.
+     * @throws AssertionError if `predicate` is `null`
      * @returns result entry set of the query.
      */
     entrySetWithPredicate(predicate: Predicate): Promise<Array<[K, V]>>;
@@ -305,7 +316,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Evicts the specified key from this map.
      *
      * @param key the key of the map entry
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      */
     evict(key: K): Promise<boolean>;
 
@@ -324,7 +335,7 @@ export interface IMap<K, V> extends DistributedObject {
      * This operation always unlocks the key.
      *
      * @param key the key of the map entry
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      */
     forceUnlock(key: K): Promise<void>;
 
@@ -332,7 +343,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Checks whether given key is locked.
      *
      * @param key the key of the map entry
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      * @returns `true` if key is locked, `false` otherwise
      */
     isLocked(key: K): Promise<boolean>;
@@ -356,7 +367,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param key the key of the map entry
      * @param leaseTime lock is automatically unlocked after `leaseTime`
      *                  milliseconds; defaults to infinity
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      */
     lock(key: K, leaseTime?: number): Promise<void>;
 
@@ -370,6 +381,7 @@ export interface IMap<K, V> extends DistributedObject {
      * of matching entries.
      *
      * @param predicate predicate to filter map entries
+     * @throws AssertionError if `predicate` is `null`
      */
     keySetWithPredicate(predicate: Predicate): Promise<K[]>;
 
@@ -408,7 +420,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param maxIdle optional maximum time in milliseconds for this entry to
      *                stay idle in the map. `0` means infinite, negative means
      *                map config default.
-     * @throws RangeError if `key` or `value` is `null` or `undefined`
+     * @throws AssertionError if `key` or `value` is `null`
      * @returns old value of the entry
      */
     putIfAbsent(key: K, value: V, ttl?: number | Long, maxIdle?: number | Long): Promise<V>;
@@ -425,7 +437,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param maxIdle optional maximum time in milliseconds for this entry to
      *                stay idle in the map. `0` means infinite, negative means
      *                map config default.
-     * @throws RangeError if key or value is `null` or `undefined`
+     * @throws AssertionError if `key` or `value` is `null`
      */
     putTransient(key: K, value: V, ttl?: number | Long, maxIdle?: number | Long): Promise<void>;
 
@@ -433,9 +445,9 @@ export interface IMap<K, V> extends DistributedObject {
      * Replaces value of the key if only it was associated to `oldValue`.
      *
      * @param key the key of the map entry
-     * @param value new value
+     * @param newValue new value
      * @param oldValue expected old value
-     * @throws RangeError if key, oldValue or newValue is `null` or `undefined`
+     * @throws AssertionError if `key`, `oldValue` or `newValue` is `null`
      * @returns `true` if the value was replaced
      */
     replaceIfSame(key: K, oldValue: V, newValue: V): Promise<boolean>;
@@ -445,7 +457,7 @@ export interface IMap<K, V> extends DistributedObject {
      *
      * @param key the key of the map entry
      * @param newValue
-     * @throws RangeError if `key` or `newValue` is `null` or `undefined`
+     * @throws AssertionError if `key` or `newValue` is `null`
      * @returns previous value
      */
     replace(key: K, newValue: V): Promise<V>;
@@ -476,7 +488,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param maxIdle optional maximum time in milliseconds for this entry to
      *                stay idle in the map. `0` means infinite, negative means
      *                map config default.
-     * @throws RangeError if `key` or `value` is `null` or `undefined`
+     * @throws AssertionError if `key` or `value` is `null`
      */
     set(key: K, value: V, ttl?: number | Long, maxIdle?: number | Long): Promise<void>;
 
@@ -485,7 +497,7 @@ export interface IMap<K, V> extends DistributedObject {
      * hold count is decremented. If hold count is zero, lock is released.
      *
      * @param key the key of the map entry
-     * @throws RangeError if this client is not the owner of the key
+     * @throws AssertionError if `key` is `null`
      */
     unlock(key: K): Promise<void>;
 
@@ -499,6 +511,7 @@ export interface IMap<K, V> extends DistributedObject {
      * matching entries. Specified predicate runs on all members in parallel.
      *
      * @param predicate
+     * @throws AssertionError if `predicate` is `null`
      * @returns a list of values that satisfies the given predicate
      */
     valuesWithPredicate(predicate: Predicate): Promise<ReadOnlyLazyList<V>>;
@@ -507,7 +520,7 @@ export interface IMap<K, V> extends DistributedObject {
      * Returns a key-value pair representing the association of given key.
      *
      * @param key the key of the map entry
-     * @throws RangeError if key is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      */
     getEntryView(key: K): Promise<SimpleEntryView<K, V>>;
 
@@ -525,7 +538,7 @@ export interface IMap<K, V> extends DistributedObject {
      *                the lock before giving up; defaults to `0`
      * @param leaseTime lock is automatically release after `leaseTime`
      *                  milliseconds; defaults to infinity
-     * @throws RangeError if `key` is `null` or `undefined`
+     * @throws AssertionError if `key` is `null`
      */
     tryLock(key: K, timeout?: number, leaseTime?: number): Promise<boolean>;
 
@@ -537,7 +550,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param key the key of the map entry
      * @param value new value
      * @param timeout maximum time to wait in milliseconds
-     * @throws RangeError if `key` or `value` or `timeout` is `null` or `undefined`
+     * @throws AssertionError if `key`, `value` or `timeout` is `null`
      */
     tryPut(key: K, value: V, timeout: number): Promise<boolean>;
 
@@ -548,7 +561,7 @@ export interface IMap<K, V> extends DistributedObject {
      *
      * @param key the key of the map entry
      * @param timeout maximum time to wait in milliseconds
-     * @throws RangeError if `key` or `timeout` is `null` or `undefined`
+     * @throws AssertionError if `key` or `timeout` is `null`
      */
     tryRemove(key: K, timeout: number): Promise<boolean>;
 
@@ -594,6 +607,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param entryProcessor EntryProcessor object
      * @param predicate if specified, entry processor is applied to the entries
      *                  that satisfy this predicate
+     * @throws AssertionError if `entryProcessor` is `null`
      * @returns entries after EntryProcessor is applied
      */
     executeOnEntries(entryProcessor: IdentifiedDataSerializable | Portable, predicate?: Predicate): Promise<Array<[K, V]>>;
@@ -604,6 +618,7 @@ export interface IMap<K, V> extends DistributedObject {
      * @param key entry processor is applied only to the value that is mapped
      *            with this key
      * @param entryProcessor entry processor to be applied
+     * @throws AssertionError if `key` or `entryProcessor` is `null`
      * @returns result of entry process
      */
     executeOnKey(key: K, entryProcessor: IdentifiedDataSerializable | Portable): Promise<V>;
@@ -614,6 +629,7 @@ export interface IMap<K, V> extends DistributedObject {
      *
      * @param keys keys to be processed
      * @param entryProcessor
+     * @throws AssertionError if `keys` is not an array
      * @returns result of entry process
      */
     executeOnKeys(keys: K[], entryProcessor: IdentifiedDataSerializable | Portable): Promise<Array<[K, V]>>;
@@ -638,7 +654,7 @@ export interface IMap<K, V> extends DistributedObject {
      *            The given value is rounded to the next closest second value.
      * @return `true` if the entry exists and its TTL value is changed,
      *          `false` otherwise
-     * @throws RangeError if `key` or `ttl` is `null` or `undefined`
+     * @throws AssertionError if `key` or `ttl` is `null`
      */
     setTtl(key: K, ttl: number | Long): Promise<boolean>;
 }

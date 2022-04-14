@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 'use strict';
 
+const TestUtil = require('../../TestUtil');
+
 function DistortInvalidationMetadataEntryProcessor(mapName, mapSize, duration) {
     this.mapSize = mapSize;
     this.mapName = mapName;
@@ -24,13 +26,13 @@ function DistortInvalidationMetadataEntryProcessor(mapName, mapSize, duration) {
 }
 
 DistortInvalidationMetadataEntryProcessor.prototype.readData = function (inp) {
-    this.mapName = inp.readString();
+    this.mapName = TestUtil.readStringFromInput(inp);
     this.mapSize = inp.readInt();
     this.duration = inp.readInt();
 };
 
 DistortInvalidationMetadataEntryProcessor.prototype.writeData = function (outp) {
-    outp.writeString(this.mapName);
+    TestUtil.writeStringToOutput(outp, this.mapName);
     outp.writeInt(this.mapSize);
     outp.writeInt(this.duration);
 };

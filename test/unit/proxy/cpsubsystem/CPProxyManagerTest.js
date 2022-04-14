@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ const {
 } = require('../../../../lib/proxy/cpsubsystem/CPProxyManager');
 
 describe('CPProxyManagerTest', function () {
-
     it('withoutDefaultGroupName: should remove default group from result', function () {
         expect(withoutDefaultGroupName('test@default')).to.be.equal('test');
         expect(withoutDefaultGroupName('test@custom')).to.be.equal('test@custom');

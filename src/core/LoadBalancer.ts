@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,13 @@ import {
 } from './MembershipListener';
 
 /**
- * {@link LoadBalancer} allows you to send operations to one of a number of endpoints (Members).
+ * A {@link LoadBalancer} selects one of the endpoints(Members) for the next send operation that be directed
+ * to many endpoints.
  * It is up to the implementation to use different load balancing policies.
- * <p>
- * If Client is configured with {@link ClientNetworkConfig.smartRouting},
- * only the operations that are not key based will be routed to the endpoint
- * returned by the LoadBalancer. If it is not, the LoadBalancer will not be used.
- * <p>
+ *
+ * If the client is a smart client configured with {@link ClientNetworkConfig.smartRouting},
+ * only the operations that are not key based will be routed via LoadBalancer.
+ * If the client is not a smart client, the LoadBalancer will not be used.
  */
 export interface LoadBalancer {
 
@@ -47,36 +47,60 @@ export interface LoadBalancer {
      *
      * @return Returns the next member or `null` if no member is available
      */
-    next(): Member;
+    next(): Member | null;
 
+    /**
+     * Returns the next data member to route to.
+     *
+     * @return Returns the next data member or `null` if no data member is available
+     * @deprecated Since 5.0, the method is unused
+     */
+    nextDataMember(): Member | null;
+
+    /**
+     * Returns whether this instance supports getting data members through a call to {@link nextDataMember}.
+     *
+     * @return Returns `true` if this load balancer can get a data member.
+     * @deprecated Since 5.0, the method is unused
+     */
+    canGetNextDataMember(): boolean;
 }
 
 /**
- * Abstract Load Balancer to be used in built-in and user-provided
+ * Abstract Load Balancer to be used by built-in and user-provided
  * {@link LoadBalancer} implementations.
  */
 export abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembershipListener {
 
     private members: Member[];
+    private dataMembers: Member[];
     private cluster: Cluster;
 
-    abstract next(): Member;
+    abstract next(): Member | null;
 
-    initLoadBalancer(cluster: Cluster, config: ClientConfig): void {
+    abstract nextDataMember(): Member | null;
+
+    abstract canGetNextDataMember(): boolean;
+
+    initLoadBalancer(cluster: Cluster, _config: ClientConfig): void {
         this.cluster = cluster;
         cluster.addMembershipListener(this);
     }
 
-    init(event: InitialMembershipEvent): void {
+    init(_event: InitialMembershipEvent): void {
         this.setMembers();
     }
 
-    memberAdded(membership: MembershipEvent): void {
+    memberAdded(_membership: MembershipEvent): void {
         this.setMembers();
     }
 
-    memberRemoved(membership: MembershipEvent): void {
+    memberRemoved(_membership: MembershipEvent): void {
         this.setMembers();
+    }
+
+    protected getDataMembers(): Member[] {
+        return this.dataMembers;
     }
 
     protected getMembers(): Member[] {
@@ -85,5 +109,6 @@ export abstract class AbstractLoadBalancer implements LoadBalancer, InitialMembe
 
     private setMembers(): void {
         this.members = this.cluster.getMembers();
+        this.dataMembers = this.members.filter(member => !member.liteMember);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ module.exports = {
     plugins: [
         '@typescript-eslint',
     ],
+    ignorePatterns: [
+        '.eslintrc.js'
+    ],
     extends: [
         'eslint:recommended',
         'plugin:@typescript-eslint/eslint-recommended',
@@ -42,5 +45,9 @@ module.exports = {
         'prefer-rest-params': 'off',
         'max-len': [ 'error', 130, 4 ],
         'quotes': ['error', 'single'],
+        'keyword-spacing': 'error',
+        'space-before-blocks': 'warn',
+        'space-in-parens': 'error',
+        'curly': 'error',
     }
 };

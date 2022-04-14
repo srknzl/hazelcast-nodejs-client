@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,12 +82,10 @@ export class AddressImpl implements Address, IdentifiedDataSerializable {
         if (other == null) {
             return false;
         }
-        if (other.host === this.host &&
+        return other.host === this.host &&
             other.port === this.port &&
-            other.type === this.type) {
-            return true;
-        }
-        return false;
+            other.type === this.type;
+
     }
 
     toString(): string {

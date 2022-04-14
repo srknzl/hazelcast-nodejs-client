@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,19 @@
 const { Client } = require('hazelcast-client');
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient();
-        const topic = await client.getReliableTopic('my-distributed-topic');
+    const client = await Client.newHazelcastClient();
+    const topic = await client.getReliableTopic('my-distributed-topic');
 
-        topic.addMessageListener((message) => {
-            console.log('Received message:\n', message);
-            // shut down the client once the message is received
-            client.shutdown().catch((err) => {
-                console.error('Failed to shut down the client:', err);
-            });
+    topic.addMessageListener((message) => {
+        console.log('Received message:\n', message);
+        // shut down the client once the message is received
+        client.shutdown().catch((err) => {
+            console.error('Failed to shut down the client:', err);
         });
+    });
 
-        await topic.publish('Hello to distributed world');
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await topic.publish('Hello to distributed world');
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

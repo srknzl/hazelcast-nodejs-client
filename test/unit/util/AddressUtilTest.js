@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 'use strict';
 
-const { expect } = require('chai');
+const chai = require('chai');
+const expect = chai.expect;
+chai.use(require('chai-as-promised'));
 const net = require('net');
 const {
     createAddressFromString,
@@ -25,7 +27,6 @@ const {
 } = require('../../../lib/util/AddressUtil');
 
 describe('AddressUtilTest', function () {
-
     const host = 'example.com';
     const v4Address = '127.0.0.1';
     const v6Address = '2001:0db8:85a3:0000:0000:8a2e:0370:7334';
@@ -121,10 +122,10 @@ describe('AddressUtilTest', function () {
         const server = net.createServer(() => {
             // no-response
         });
-        await new Promise((resolve) => server.listen(5701, resolve));
+        await new Promise((resolve) => server.listen(0, resolve));
 
         try {
-            const result = await isAddressReachable('127.0.0.1', 5701, 1000);
+            const result = await isAddressReachable('127.0.0.1', server.address().port, 1000);
             expect(result).to.be.true;
         } finally {
             server.close();
@@ -135,10 +136,10 @@ describe('AddressUtilTest', function () {
         const server = net.createServer(() => {
             // no-response
         });
-        await new Promise((resolve) => server.listen(5701, resolve));
+        await new Promise((resolve) => server.listen(0, resolve));
 
         try {
-            const result = await isAddressReachable('localhost', 5701, 1000);
+            const result = await isAddressReachable('localhost', server.address().port, 1000);
             expect(result).to.be.true;
         } finally {
             server.close();
@@ -150,14 +151,14 @@ describe('AddressUtilTest', function () {
         expect(result).to.be.false;
     });
 
-    it('resolveAddress: returns IPv4 for localhost with port', async function () {
+    it('resolveAddress: returns loopback address for localhost with port', async function () {
         const result = await resolveAddress('localhost:5701');
-        expect(result).to.be.equal('127.0.0.1');
+        expect(result).to.satisfy(ip => ip === '127.0.0.1' || ip === '::1');
     });
 
-    it('resolveAddress: returns IPv4 for localhost without port', async function () {
+    it('resolveAddress: returns loopback address for localhost without port', async function () {
         const result = await resolveAddress('localhost');
-        expect(result).to.be.equal('127.0.0.1');
+        expect(result).to.satisfy(ip => ip === '127.0.0.1' || ip === '::1');
     });
 
     it('resolveAddress: returns IPv4 for IPv4 address with port', async function () {

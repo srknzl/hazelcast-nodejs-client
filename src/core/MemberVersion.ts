@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,5 +25,30 @@ export class MemberVersion {
         this.major = major;
         this.minor = minor;
         this.patch = patch;
+    }
+
+    /**
+     * @param other other version to compare to
+     * @param ignorePatchVersion whether patch in the version should be ignored
+     * @return true if this version equals `other`
+     */
+    equals(other: MemberVersion, ignorePatchVersion = false): boolean {
+        if (ignorePatchVersion) {
+            return this.major === other.major && this.minor === other.minor;
+        } else {
+            return this.major === other.major && this.minor === other.minor && this.patch === other.patch;
+        }
+    }
+
+    /**
+     * @param ignorePatchVersion whether patch in the version should be ignored
+     * @return string format of this `MemberVersion`
+     */
+    toString(ignorePatchVersion = false): string {
+        if (ignorePatchVersion) {
+            return `${this.major}.${this.minor}`;
+        } else {
+            return `${this.major}.${this.minor}.${this.patch}`;
+        }
     }
 }

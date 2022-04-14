@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,20 +18,19 @@
 const { Client } = require('hazelcast-client');
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient();
+    const client = await Client.newHazelcastClient();
 
-        const ref = await client.getCPSubsystem().getAtomicReference('my-ref');
-        await ref.set(42);
+    const ref = await client.getCPSubsystem().getAtomicReference('my-ref');
+    await ref.set(42);
 
-        const value = await ref.get();
-        console.log('Value:', value);
+    const value = await ref.get();
+    console.log('Value:', value);
 
-        const result = await ref.compareAndSet(42, 'value');
-        console.log('CAS result:', result);
+    const result = await ref.compareAndSet(42, 'value');
+    console.log('CAS result:', result);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,6 @@ const { ClientConfigImpl } = require('../../../lib/config/Config');
 const { HazelcastCloudDiscovery } = require('../../../lib/discovery/HazelcastCloudDiscovery');
 
 describe('HazelcastClientCloudConfigTest', function () {
-
     it('defaultCloudUrlEndpoint', function () {
         const config = new ClientConfigImpl();
         const token = 'TOKEN';

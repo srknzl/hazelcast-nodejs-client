@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ import {ProxyManager} from './ProxyManager';
 import {PartitionService} from '../PartitionService';
 import {InvocationService} from '../invocation/InvocationService';
 import {SerializationService} from '../serialization/SerializationService';
-import {ConnectionRegistry} from '../network/ConnectionManager';
+import {ConnectionRegistry} from '../network/ConnectionRegistry';
 import {ListenerService} from '../listener/ListenerService';
 import {ClusterService} from '../invocation/ClusterService';
 
@@ -192,7 +192,7 @@ export class MultiMapProxy<K, V> extends BaseProxy implements MultiMap<K, V> {
                                    eventType: number,
                                    uuid: UUID,
                                    numberOfAffectedEntries: number): void => {
-            const member = this.clusterService.getMember(uuid);
+            const member = this.clusterService.getMember(uuid.toString());
             const name = this.name;
 
             key = toObject(keyData);

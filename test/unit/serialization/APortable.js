@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 'use strict';
 
 class APortable {
-
     constructor(bool, b, c, d, s, f, i, l, str, p, booleans, bytes, chars,
                 doubles, shorts, floats, ints, longs, strings, portables,
                 identifiedDataSerializable, customStreamSerializableObject,
                 customByteArraySerializableObject, data) {
-        if (arguments.length === 0) return;
+        if (arguments.length === 0) {
+            return;
+        }
         this.bool = bool;
         this.b = b;
         this.c = c;

@@ -1,4 +1,5 @@
 {
-    "cache": "false",
-    "reporter": "cobertura"
+    "extends": "@istanbuljs/nyc-config-typescript",
+    "reporter": "lcov",
+    "exclude": ["scripts", "test"]
 }

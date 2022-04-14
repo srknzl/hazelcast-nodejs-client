@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -365,11 +365,11 @@ export class FalsePredicate extends AbstractPredicate {
     classId = FalsePredicate.CLASS_ID;
     static INSTANCE: FalsePredicate = new FalsePredicate();
 
-    readData(input: DataInput): any {
+    readData(_input: DataInput): any {
         // no-op
     }
 
-    writeData(output: DataOutput): any {
+    writeData(_output: DataOutput): any {
         // no-op
     }
 }
@@ -382,11 +382,11 @@ export class TruePredicate extends AbstractPredicate {
     classId = TruePredicate.CLASS_ID;
     static INSTANCE: TruePredicate = new TruePredicate();
 
-    readData(input: DataInput): any {
+    readData(_input: DataInput): any {
         // no-op
     }
 
-    writeData(output: DataOutput): any {
+    writeData(_output: DataOutput): any {
         // no-op
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,12 @@
 import * as Long from 'long';
 import {BitsUtil} from '../../util/BitsUtil';
 import {UUID} from '../../core/UUID';
+import {
+    LocalDate,
+    LocalDateTime,
+    LocalTime,
+    OffsetDateTime
+} from '../../core';
 
 // Taken from long.js, https://github.com/dcodeIO/long.js/blob/master/src/long.js
 const TWO_PWR_16_DBL = 1 << 16;
@@ -32,6 +38,49 @@ export class FixSizedTypesCodec {
 
     static decodeInt(buffer: Buffer, offset: number): number {
         return buffer.readInt32LE(offset);
+    }
+
+    static decodeLocalDate(buffer: Buffer, offset: number): LocalDate {
+        const year = FixSizedTypesCodec.decodeInt(buffer, offset);
+        const month = FixSizedTypesCodec.decodeByte(buffer, offset + BitsUtil.INT_SIZE_IN_BYTES);
+        const date = FixSizedTypesCodec.decodeByte(buffer, offset + BitsUtil.INT_SIZE_IN_BYTES + BitsUtil.BYTE_SIZE_IN_BYTES);
+
+        return new LocalDate(year, month, date);
+    }
+
+    static decodeLocalDateTime(buffer: Buffer, offset: number): LocalDateTime {
+        const localDate = FixSizedTypesCodec.decodeLocalDate(buffer, offset);
+        const localTime = FixSizedTypesCodec.decodeLocalTime(buffer, offset + BitsUtil.LOCAL_DATE_SIZE_IN_BYTES);
+
+        return new LocalDateTime(localDate, localTime);
+    }
+
+    static decodeOffsetDateTime(buffer: Buffer, offset: number): OffsetDateTime {
+        const localDateTime = FixSizedTypesCodec.decodeLocalDateTime(buffer, offset);
+        const offsetSeconds = FixSizedTypesCodec.decodeInt(buffer, offset + BitsUtil.LOCAL_DATETIME_SIZE_IN_BYTES);
+
+        return new OffsetDateTime(localDateTime, offsetSeconds);
+    }
+
+    static decodeLocalTime(buffer: Buffer, offset: number): LocalTime {
+        const hour = FixSizedTypesCodec.decodeByte(buffer, offset);
+        const minute = FixSizedTypesCodec.decodeByte(buffer, offset + BitsUtil.BYTE_SIZE_IN_BYTES);
+        const second = FixSizedTypesCodec.decodeByte(buffer, offset + BitsUtil.BYTE_SIZE_IN_BYTES * 2);
+        const nano = FixSizedTypesCodec.decodeInt(buffer, offset + BitsUtil.BYTE_SIZE_IN_BYTES * 3);
+
+        return new LocalTime(hour, minute, second, nano);
+    }
+
+    static decodeShort(buffer: Buffer, offset: number): number {
+        return buffer.readInt16LE(offset);
+    }
+
+    static decodeFloat(buffer: Buffer, offset: number): number {
+        return buffer.readFloatLE(offset);
+    }
+
+    static decodeDouble(buffer: Buffer, offset: number): number {
+        return buffer.readDoubleLE(offset);
     }
 
     static encodeLong(buffer: Buffer, offset: number, value: any): void {
@@ -64,13 +113,13 @@ export class FixSizedTypesCodec {
      */
     static encodeNonNegativeNumberAsLong(buffer: Buffer, offset: number, value: number): void {
         if (value < 0) {
-            throw new Error("Only positive numbers are allowed in this method, received: " + value);
+            throw new Error('Only positive numbers are allowed in this method, received: ' + value);
         }
 
         if (value + 1 >= TWO_PWR_63_DBL) {
             // MAX_VALUE
-            buffer.writeInt32LE(0xFFFFFFFF|0, offset);
-            buffer.writeInt32LE(0x7FFFFFFF|0, offset + BitsUtil.INT_SIZE_IN_BYTES);
+            buffer.writeInt32LE(0xFFFFFFFF | 0, offset);
+            buffer.writeInt32LE(0x7FFFFFFF | 0, offset + BitsUtil.INT_SIZE_IN_BYTES);
             return;
         }
 
@@ -122,12 +171,12 @@ export class FixSizedTypesCodec {
     }
 
     static decodeUUID(buffer: Buffer, offset: number): UUID {
-        const isNull = this.decodeBoolean(buffer, offset);
+        const isNull = FixSizedTypesCodec.decodeBoolean(buffer, offset);
         if (isNull) {
             return null;
         }
-        const mostSignificantBits = this.decodeLong(buffer, offset + BitsUtil.BOOLEAN_SIZE_IN_BYTES);
-        const leastSignificantBits = this.decodeLong(buffer,
+        const mostSignificantBits = FixSizedTypesCodec.decodeLong(buffer, offset + BitsUtil.BOOLEAN_SIZE_IN_BYTES);
+        const leastSignificantBits = FixSizedTypesCodec.decodeLong(buffer,
             offset + BitsUtil.BOOLEAN_SIZE_IN_BYTES + BitsUtil.LONG_SIZE_IN_BYTES);
         return new UUID(mostSignificantBits, leastSignificantBits);
     }

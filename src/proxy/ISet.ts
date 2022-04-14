@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ import {DistributedObject} from '../core';
 
 /**
  * Concurrent and distributed set.
+ *
+ * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
+ * serializer for a certain type.
  */
 export interface ISet<E> extends DistributedObject {
     /**
      * Adds the specified element to this set if not already present.
      * @param entry
-     * @throws {Error} if entry is null or undefined.
      * @return a promise to be resolved to true if this set did not contain the element.
      */
     add(entry: E): Promise<boolean>;
@@ -33,7 +35,6 @@ export interface ISet<E> extends DistributedObject {
      * Adds the elements in the array `items` to this set if not already present.
      * At the end, the set contains all elements of `items` array and its previous elements.
      * @param items
-     * @throws {Error} if collection or one of its elements is null or undefined.
      * @return true if this set changed, false otherwise.
      */
     addAll(items: E[]): Promise<boolean>;
@@ -52,7 +53,6 @@ export interface ISet<E> extends DistributedObject {
     /**
      * Checks whether this set contains the given element.
      * @param entry
-     * @throws {Error} if entry is null.
      * @return true if this set contains the given element, false otherwise.
      */
     contains(entry: E): Promise<boolean>;
@@ -60,8 +60,7 @@ export interface ISet<E> extends DistributedObject {
     /**
      * Checks whether this set contains all elements of given array.
      * @param items
-     * @throws {Error} if collection or one of its elements is null or undefined.
-     * @return `tru`e if this set contains all elments of given collection, `false` otherwise.
+     * @return `tru`e if this set contains all elements of given collection, `false` otherwise.
      */
     containsAll(items: E[]): Promise<boolean>;
 
@@ -74,7 +73,6 @@ export interface ISet<E> extends DistributedObject {
     /**
      * Removes given entry from this set.
      * @param entry
-     * @throws {Error} if entry is null or undefined.
      * @return true if this set actually had given element, false otherwise.
      */
     remove(entry: E): Promise<boolean>;
@@ -82,7 +80,6 @@ export interface ISet<E> extends DistributedObject {
     /**
      * Removes all elements of given array from this set.
      * @param items
-     * @throws {Error} if collection or one of its elements is null or undefined.
      * @return `true` if this set changed.
      */
     removeAll(items: E[]): Promise<boolean>;
@@ -90,7 +87,6 @@ export interface ISet<E> extends DistributedObject {
     /**
      * Removes all elements from this set except the elements of given array.
      * @param items
-     * @throws {Error} if collection or one of its elements is null or undefined.
      * @return `true` if this set changed.
      */
     retainAll(items: E[]): Promise<boolean>;

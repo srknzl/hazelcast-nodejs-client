@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ const {
 } = require('../../../lib/serialization/ObjectData');
 
 describe('ObjectDataTest', function () {
-
     const out = new ODOut(null, true);
     before(function () {
         out.write(15);
@@ -37,9 +36,9 @@ describe('ObjectDataTest', function () {
         out.writeCharArray(['h', 'a', 'z', 'e', 'l']);
         out.writeChars('cast');
         out.writeDouble(435437.23);
-        out.writeDoubleArray([21.2, 0, -34253.2, -436, 41, 0.444444444444444444]);
+        out.writeDoubleArray([21.2, 0, -34253.2, -436, 41, 0.4444444444444444]);
         out.writeFloat(3.4);
-        out.writeFloatArray([21.2, 0, -34253.2, -436, 41, 0.444444444444444444]);
+        out.writeFloatArray([21.2, 0, -34253.2, -436, 41, 0.4444444444444444]);
         out.writeInt(9876543);
         out.writeIntArray([1, -2, 0, 54]);
         out.writeLong(new Long(255, 255));
@@ -73,12 +72,12 @@ describe('ObjectDataTest', function () {
         expect(inp.readCharArray()).to.deep.equal(['h', 'a', 'z', 'e', 'l']);
         expect(inp.readCharArray().join('')).to.equal('cast');
         expect(inp.readDouble()).to.equals(435437.23);
-        inp.readDoubleArray().forEach(function (fl, index) {
-            expect(fl).to.be.closeTo([21.2, 0, -34253.2, -436, 41, 0.444444444444444444][index], 0.001);
+        inp.readDoubleArray().forEach((fl, index) => {
+            expect(fl).to.be.closeTo([21.2, 0, -34253.2, -436, 41, 0.4444444444444444][index], 0.001);
         });
         expect(inp.readFloat()).to.be.closeTo(3.4, 0.0001);
-        inp.readFloatArray().forEach(function (fl, index) {
-            expect(fl).to.be.closeTo([21.2, 0, -34253.2, -436, 41, 0.444444444444444444][index], 0.001);
+        inp.readFloatArray().forEach((fl, index) => {
+            expect(fl).to.be.closeTo([21.2, 0, -34253.2, -436, 41, 0.4444444444444444][index], 0.001);
         });
         expect(inp.readInt()).to.equal(9876543);
         expect(inp.readIntArray()).to.deep.equal([1, -2, 0, 54]);

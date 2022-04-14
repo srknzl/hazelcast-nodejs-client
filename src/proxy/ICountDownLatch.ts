@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,7 +71,7 @@ export interface ICountDownLatch extends DistributedObject {
      *                zero, the method will not wait at all
      * @returns `true` if the count reached zero, `false` if the waiting
      *          time elapsed before the count reached zero
-     * @throws IllegalStateError if the Hazelcast instance was shut down
+     * @throws {@link IllegalStateError} if the Hazelcast instance was shut down
      *         while waiting
      */
     await(timeout: number): Promise<boolean>;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 'use strict';
 
-class InnerPortable {
+const TestUtil = require('../../TestUtil');
 
+class InnerPortable {
     constructor(p1, p2) {
         this.p1 = p1;
         this.p2 = p2;
@@ -25,23 +26,27 @@ class InnerPortable {
     }
 
     readPortable(reader) {
-        this.p1 = reader.readString('p1');
-        this.p2 = reader.readString('p2');
+        this.p1 = TestUtil.readStringFromReader(reader, 'p1');
+        this.p2 = TestUtil.readStringFromReader(reader, 'p2');
     }
 
     writePortable(writer) {
-        writer.writeString('p1', this.p1);
-        writer.writeString('p2', this.p2);
+        TestUtil.writeStringToWriter(writer, 'p1', this.p1);
+        TestUtil.writeStringToWriter(writer, 'p2', this.p2);
     }
-
 }
 
 class PortableObject {
-
-    constructor(a_byte, a_boolean, a_character, a_short, an_integer,
-                a_long, a_float, a_double, a_string, a_portable,
-                bytes, booleans, chars, shorts, integers, longs,
-                floats, doubles, strings, portables) {
+    constructor(
+        {
+            a_byte, a_boolean, a_character, a_short, an_integer,
+            a_long, a_float, a_double, a_string, a_portable, a_decimal,
+            a_time, a_date, a_timestamp, a_timestamp_with_timezone,
+            bytes, booleans, chars, shorts, integers, longs,
+            floats, doubles, strings, portables, decimals, times,
+            dates, timestamps, timestamp_with_timezones
+        }
+    ) {
         this.a_byte = a_byte;
         this.a_boolean = a_boolean;
         this.a_character = a_character;
@@ -53,6 +58,12 @@ class PortableObject {
         this.a_string = a_string;
         this.a_portable = a_portable;
         this.a_null_portable = null;
+        this.a_decimal = a_decimal;
+        this.a_time = a_time;
+        this.a_date = a_date;
+        this.a_timestamp = a_timestamp;
+        this.a_timestamp_with_timezone = a_timestamp_with_timezone;
+
         this.bytes = bytes;
         this.booleans = booleans;
         this.chars = chars;
@@ -63,6 +74,11 @@ class PortableObject {
         this.doubles = doubles;
         this.strings = strings;
         this.portables = portables;
+        this.decimals = decimals;
+        this.times = times;
+        this.dates = dates;
+        this.timestamps = timestamps;
+        this.timestamp_with_timezones = timestamp_with_timezones;
         this.factoryId = 10;
         this.classId = 111;
     }
@@ -80,6 +96,11 @@ class PortableObject {
         writer.writePortable('a_portable', this.a_portable);
         const tmpInnerObj = new InnerPortable();
         writer.writeNullPortable('a_null_portable', tmpInnerObj.factoryId, tmpInnerObj.classId);
+        writer.writeDecimal('a_decimal', this.a_decimal);
+        writer.writeTime('a_time', this.a_time);
+        writer.writeDate('a_date', this.a_date);
+        writer.writeTimestamp('a_timestamp', this.a_timestamp);
+        writer.writeTimestampWithTimezone('a_timestamp_with_timezone', this.a_timestamp_with_timezone);
 
         writer.writeByteArray('bytes', this.bytes);
         writer.writeBooleanArray('booleans', this.booleans);
@@ -91,6 +112,11 @@ class PortableObject {
         writer.writeDoubleArray('doubles', this.doubles);
         writer.writeStringArray('strings', this.strings);
         writer.writePortableArray('portables', this.portables);
+        writer.writeDecimalArray('decimals', this.decimals);
+        writer.writeTimeArray('times', this.times);
+        writer.writeDateArray('dates', this.dates);
+        writer.writeTimestampArray('timestamps', this.timestamps);
+        writer.writeTimestampWithTimezoneArray('timestamp_with_timezones', this.timestamp_with_timezones);
     }
 
     readPortable(reader) {
@@ -105,6 +131,11 @@ class PortableObject {
         this.a_string = reader.readString('a_string');
         this.a_portable = reader.readPortable('a_portable');
         this.a_null_portable = reader.readPortable('a_null_portable');
+        this.a_decimal = reader.readDecimal('a_decimal');
+        this.a_time = reader.readTime('a_time');
+        this.a_date = reader.readDate('a_date');
+        this.a_timestamp = reader.readTimestamp('a_timestamp');
+        this.a_timestamp_with_timezone = reader.readTimestampWithTimezone('a_timestamp_with_timezone');
 
         this.bytes = reader.readByteArray('bytes');
         this.booleans = reader.readBooleanArray('booleans');
@@ -116,16 +147,26 @@ class PortableObject {
         this.doubles = reader.readDoubleArray('doubles');
         this.strings = reader.readStringArray('strings');
         this.portables = reader.readPortableArray('portables');
+        this.decimals = reader.readDecimalArray('decimals');
+        this.times = reader.readTimeArray('times');
+        this.dates = reader.readDateArray('dates');
+        this.timestamps = reader.readTimestampArray('timestamps');
+        this.timestamp_with_timezones = reader.readTimestampWithTimezoneArray('timestamp_with_timezones');
     }
-
 }
 
 class PortableObjectV2 {
-
-    constructor(a_new_prop, a_byte, a_boolean, a_character, a_short, an_integer,
-                a_long, a_float, a_double, a_portable, bytes, booleans, chars,
-                shorts, integers, longs, floats, doubles, strings, portables) {
-        this.a_new_prop = a_new_prop;// this prop is newly added
+    constructor(
+        {
+            a_new_prop, a_byte, a_boolean, a_character, a_short, an_integer,
+            a_long, a_float, a_double, a_portable, a_decimal,
+            a_time, a_date, a_timestamp, a_timestamp_with_timezone,
+            bytes, booleans, chars, shorts, integers, longs,
+            floats, doubles, strings, portables, decimals, times,
+            dates, timestamps, timestamp_with_timezones
+        }
+    ) {
+        this.a_new_prop = a_new_prop; // this prop is newly added
         this.a_byte = a_byte;
         this.a_boolean = a_boolean;
         this.a_character = a_character;
@@ -137,6 +178,12 @@ class PortableObjectV2 {
         // a_string is removed
         this.a_portable = a_portable;
         this.a_null_portable = null;
+        this.a_decimal = a_decimal;
+        this.a_time = a_time;
+        this.a_date = a_date;
+        this.a_timestamp = a_timestamp;
+        this.a_timestamp_with_timezone = a_timestamp_with_timezone;
+
         this.bytes = bytes;
         this.booleans = booleans;
         this.chars = chars;
@@ -147,7 +194,11 @@ class PortableObjectV2 {
         this.doubles = doubles;
         this.strings = strings;
         this.portables = portables;
-
+        this.decimals = decimals;
+        this.times = times;
+        this.dates = dates;
+        this.timestamps = timestamps;
+        this.timestamp_with_timezones = timestamp_with_timezones;
         this.factoryId = 10;
         this.classId = 111;
         this.version = 2;
@@ -166,6 +217,11 @@ class PortableObjectV2 {
         writer.writePortable('a_portable', this.a_portable);
         const tmpInnerObj = new InnerPortable();
         writer.writeNullPortable('a_null_portable', tmpInnerObj.factoryId, tmpInnerObj.classId);
+        writer.writeDecimal('a_decimal', this.a_decimal);
+        writer.writeTime('a_time', this.a_time);
+        writer.writeDate('a_date', this.a_date);
+        writer.writeTimestamp('a_timestamp', this.a_timestamp);
+        writer.writeTimestampWithTimezone('a_timestamp_with_timezone', this.a_timestamp_with_timezone);
 
         writer.writeByteArray('bytes', this.bytes);
         writer.writeBooleanArray('booleans', this.booleans);
@@ -177,6 +233,11 @@ class PortableObjectV2 {
         writer.writeDoubleArray('doubles', this.doubles);
         writer.writeStringArray('strings', this.strings);
         writer.writePortableArray('portables', this.portables);
+        writer.writeDecimalArray('decimals', this.decimals);
+        writer.writeTimeArray('times', this.times);
+        writer.writeDateArray('dates', this.dates);
+        writer.writeTimestampArray('timestamps', this.timestamps);
+        writer.writeTimestampWithTimezoneArray('timestamp_with_timezones', this.timestamp_with_timezones);
     }
 
     readPortable(reader) {
@@ -191,6 +252,11 @@ class PortableObjectV2 {
         this.a_double = reader.readDouble('a_double');
         this.a_portable = reader.readPortable('a_portable');
         this.a_null_portable = reader.readPortable('a_null_portable');
+        this.a_decimal = reader.readDecimal('a_decimal');
+        this.a_time = reader.readTime('a_time');
+        this.a_date = reader.readDate('a_date');
+        this.a_timestamp = reader.readTimestamp('a_timestamp');
+        this.a_timestamp_with_timezone = reader.readTimestampWithTimezone('a_timestamp_with_timezone');
 
         this.bytes = reader.readByteArray('bytes');
         this.booleans = reader.readBooleanArray('booleans');
@@ -202,12 +268,15 @@ class PortableObjectV2 {
         this.doubles = reader.readDoubleArray('doubles');
         this.strings = reader.readStringArray('strings');
         this.portables = reader.readPortableArray('portables');
+        this.decimals = reader.readDecimalArray('decimals');
+        this.times = reader.readTimeArray('times');
+        this.dates = reader.readDateArray('dates');
+        this.timestamps = reader.readTimestampArray('timestamps');
+        this.timestamp_with_timezones = reader.readTimestampWithTimezoneArray('timestamp_with_timezones');
     }
-
 }
 
 class SimplePortable {
-
     constructor(str) {
         this.aString = str;
         this.factoryId = 10;
@@ -215,17 +284,15 @@ class SimplePortable {
     }
 
     readPortable(reader) {
-        this.aString = reader.readString('aString');
+        this.aString = TestUtil.readStringFromReader(reader, 'aString');
     }
 
     writePortable(writer) {
-        writer.writeString('aString', this.aString);
+        TestUtil.writeStringToWriter(writer, 'aString', this.aString);
     }
-
 }
 
 class SimplePortableV3 {
-
     constructor(innerObject) {
         this.innerObject = innerObject;
         this.factoryId = 10;
@@ -240,11 +307,9 @@ class SimplePortableV3 {
     writePortable(writer) {
         writer.writePortable('innerObject', this.innerObject);
     }
-
 }
 
 class Parent {
-
     constructor(child) {
         this.child = child;
         this.factoryId = 1;
@@ -258,11 +323,9 @@ class Parent {
     readPortable(reader) {
         this.child = reader.readPortable('child');
     }
-
 }
 
 class Child {
-
     constructor(name) {
         this.name = name;
         this.factoryId = 1;
@@ -276,7 +339,25 @@ class Child {
     readPortable(reader) {
         this.name = reader.readString('name');
     }
+}
 
+class DuplicateFieldNamePortable {
+    constructor(name, surname) {
+        this.name = name;
+        this.surname = surname;
+        this.factoryId = 10;
+        this.classId = 1;
+    }
+
+    writePortable(writer) {
+        writer.writeString('name', this.name);
+        writer.writeString('name', this.surname); // should throw an error
+    }
+
+    readPortable(reader) {
+        this.name = reader.readString('name');
+        this.surname = reader.readString('name');
+    }
 }
 
 exports.PortableObject = PortableObject;
@@ -286,3 +367,4 @@ exports.SimplePortable = SimplePortable;
 exports.SimplePortableV3 = SimplePortableV3;
 exports.Parent = Parent;
 exports.Child = Child;
+exports.DuplicateFieldNamePortable = DuplicateFieldNamePortable;

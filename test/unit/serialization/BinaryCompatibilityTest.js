@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ const { CustomStreamSerializable } = require('./CustomSerializable');
 const { expectAlmostEqual } = require('../../TestUtil');
 
 describe('BinaryCompatibilityTest', function () {
-
     const NULL_LENGTH = -1;
     const versions = [1];
     const objects = ReferenceObjects.testObjects;
@@ -114,7 +113,7 @@ describe('BinaryCompatibilityTest', function () {
     }
 
     before(function () {
-        versions.forEach(function (version) {
+        versions.forEach((version) => {
             const input = new ObjectDataInput(fs.readFileSync(__dirname + '/' + createFileName(version)), 0, null, true, true);
             while (input.available() > 0) {
                 const utflen = input.readUnsignedShort();
@@ -131,12 +130,11 @@ describe('BinaryCompatibilityTest', function () {
         });
     });
 
-    for (const vn in objects) {
-        const varName = vn;
+    for (const varName in objects) {
         const object = objects[varName];
         if (Object.prototype.hasOwnProperty.call(objects, varName)) {
-            versions.forEach(function (version) {
-                isBigEndianValues.forEach(function (isBigEndian) {
+            versions.forEach((version) => {
+                isBigEndianValues.forEach((isBigEndian) => {
                     it(varName + '-' + convertEndiannesToByteOrder(isBigEndian) + '-' + version, function () {
                         const key = createObjectKey(varName, version, isBigEndian);
                         const service = createSerializationService(isBigEndian, 'integer');

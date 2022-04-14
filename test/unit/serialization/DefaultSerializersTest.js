@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,18 @@ const { expect } = require('chai');
 const Long = require('long');
 const { SerializationServiceV1 } = require('../../../lib/serialization/SerializationService');
 const { SerializationConfigImpl } = require('../../../lib/config/SerializationConfig');
-const { Predicates, RestValue, UUID } = require('../../../');
+const {
+    Predicates,
+    RestValue,
+    UUID,
+    LocalDateTime,
+    OffsetDateTime,
+    LocalTime,
+    LocalDate,
+    BigDecimal
+} = require('../../../');
 
 describe('DefaultSerializersTest', function () {
-
     const restValue = new RestValue();
     restValue.value = '{"test":"data"}';
     restValue.contentType = 'text/plain';
@@ -69,11 +77,19 @@ describe('DefaultSerializersTest', function () {
         Predicates.alwaysFalse(),
         Predicates.paging(Predicates.greaterEqual('this', 10), 10),
         restValue,
-        uuid
+        uuid,
+        new LocalDate(2021, 6, 28),
+        new LocalTime(11, 22, 41, 123456789),
+        new LocalDateTime(new LocalDate(2022, 7, 29), new LocalTime(12, 23, 42, 123456789)),
+        new OffsetDateTime(new LocalDateTime(new LocalDate(2022, 7, 29), new LocalTime(12, 23, 42, 123456789)), -64800),
+        BigDecimal.fromString('1.11111111111111111111111111'),
+        BigInt('111111111111111111111111111'),
     ];
 
-    parameters.forEach(function (obj) {
-        it('type: ' + typeof obj + ', isArray: ' + Array.isArray(obj) + ', value: ' + JSON.stringify(obj), function () {
+    parameters.forEach((obj) => {
+        it('type: ' + typeof obj + ', isArray: ' + Array.isArray(obj) + ', value: '
+            + (obj instanceof BigDecimal ? `BigDecimal ${obj.toString()}` :
+                (typeof obj === 'bigint' ? `BigInt ${obj}` : JSON.stringify(obj))), function () {
                 const config = new SerializationConfigImpl();
                 const serializationService = new SerializationServiceV1(config);
                 const serialized = serializationService.toData(obj);
@@ -87,10 +103,11 @@ describe('DefaultSerializersTest', function () {
         'short',
         'integer',
         'long',
-        'float'
+        'float',
+        'byte'
     ];
 
-    defaultNumberTypes.forEach(function (type) {
+    defaultNumberTypes.forEach((type) => {
         it('convert default number type: ' + type, function () {
             let num = 56;
             if (type === 'long') {
@@ -104,11 +121,14 @@ describe('DefaultSerializersTest', function () {
         });
     });
 
-    defaultNumberTypes.forEach(function (type) {
+    defaultNumberTypes.forEach((type) => {
         it('convert array of default number type: ' + type, function () {
             let nums = [56, 101];
             if (type === 'long') {
                 nums = [Long.fromNumber(56), Long.fromNumber(101)];
+            }
+            if (type === 'byte') {
+                nums = Buffer.from(nums);
             }
             const config = new SerializationConfigImpl();
             config.defaultNumberType = type;

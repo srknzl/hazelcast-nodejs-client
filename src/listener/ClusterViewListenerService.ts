@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,11 @@
  */
 /** @ignore *//** */
 
-import {ConnectionManager, ConnectionRegistry} from '../network/ConnectionManager';
+import {
+    ConnectionManager,
+    CONNECTION_ADDED_EVENT_NAME,
+    CONNECTION_REMOVED_EVENT_NAME
+} from '../network/ConnectionManager';
 import {PartitionServiceImpl} from '../PartitionService';
 import {ClusterService} from '../invocation/ClusterService';
 import {ILogger} from '../logging/ILogger';
@@ -39,13 +43,12 @@ export class ClusterViewListenerService {
         private readonly connectionManager: ConnectionManager,
         private readonly partitionService: PartitionServiceImpl,
         private readonly clusterService: ClusterService,
-        private readonly invocationService: InvocationService,
-        private readonly connectionRegistry: ConnectionRegistry
+        private readonly invocationService: InvocationService
     ) {}
 
     public start(): void {
-        this.connectionManager.on('connectionAdded', this.connectionAdded.bind(this));
-        this.connectionManager.on('connectionRemoved', this.connectionRemoved.bind(this));
+        this.connectionManager.on(CONNECTION_ADDED_EVENT_NAME, this.connectionAdded.bind(this));
+        this.connectionManager.on(CONNECTION_REMOVED_EVENT_NAME, this.connectionRemoved.bind(this));
     }
 
     private connectionAdded(connection: Connection): void {
@@ -87,7 +90,7 @@ export class ClusterViewListenerService {
             return;
         }
         this.listenerAddedConnection = null;
-        const newConnection = this.connectionRegistry.getRandomConnection();
+        const newConnection = this.connectionManager.getConnectionRegistry().getRandomConnection();
         if (newConnection != null) {
             this.tryRegister(newConnection);
         }
@@ -96,7 +99,9 @@ export class ClusterViewListenerService {
     private createClusterViewEventHandler(connection: Connection): (msg: ClientMessage) => void {
         return (clientMessage: ClientMessage): void => {
             ClientAddClusterViewListenerCodec.handle(clientMessage,
-                this.clusterService.handleMembersViewEvent.bind(this.clusterService, this.connectionRegistry),
+                this.clusterService.handleMembersViewEvent.bind(
+                    this.clusterService, this.connectionManager.getConnectionRegistry()
+                ),
                 (version: number, partitions: Array<[UUID, number[]]>) => {
                     this.partitionService.handlePartitionViewEvent(connection, partitions, version);
                 });

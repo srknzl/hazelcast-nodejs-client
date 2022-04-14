@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +28,7 @@ const selfReferringObject = {
 selfReferringObject.self = selfReferringObject;
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient({
+    const client = await Client.newHazelcastClient({
             serialization: {
                 globalSerializer: {
                     mousseSerialize: mousse.serialize,
@@ -46,18 +45,18 @@ selfReferringObject.self = selfReferringObject;
                     }
                 }
             }
-        });
+    });
 
-        const map = await client.getMap('objects');
-        await map.put(1, selfReferringObject);
+    const map = await client.getMap('objects');
+    await map.put(1, selfReferringObject);
 
-        const obj = await map.get(1);
-        console.log(obj);
-        console.log(obj.self);
-        console.log(obj.self.self);
+    const obj = await map.get(1);
+    console.log(obj);
+    console.log(obj.self);
+    console.log(obj.self.self);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ const { InvocationService } = require('../../../../lib/invocation/InvocationServ
 const { SerializationServiceV1 } = require('../../../../lib/serialization/SerializationService');
 
 describe('SemaphoreProxyCommonTest', function () {
-
     let cpSessionManagerStub;
     let invocationServiceStub;
     let serializationServiceStub;
@@ -80,7 +79,6 @@ describe('SemaphoreProxyCommonTest', function () {
 
     for (const type of testTypes) {
         describe(`[${type}]`, function () {
-
             it('unlock: should throw for non-number', function () {
                 const proxy = createProxy(type);
                 expect(() => proxy.init('permits')).to.throw(AssertionError);

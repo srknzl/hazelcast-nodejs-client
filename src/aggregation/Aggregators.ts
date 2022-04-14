@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import {
     MaxAggregator,
     MinAggregator,
     NumberAverageAggregator,
+    DistinctValuesAggregator
 } from './Aggregator';
 
 /**
@@ -159,4 +160,15 @@ export function longAvg(attributePath?: string): Aggregator<number> {
  */
 export function longSum(attributePath?: string): Aggregator<Long> {
     return new LongSumAggregator(attributePath);
+}
+
+/**
+ * @param attributePath extracts values from this path if given.
+ * @param <R> type of the return object.
+ * @return an aggregator that calculates the distinct set of input values.
+ * Accepts null input values.
+ * Aggregation result type is a Set of R.
+ */
+export function distinct<R>(attributePath?: string): Aggregator<Set<R>> {
+    return new DistinctValuesAggregator<R>();
 }

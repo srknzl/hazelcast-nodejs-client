@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 'use strict';
 
+const TestUtil = require('../../TestUtil');
+
 function PrefixFilter(prefix) {
     this.prefix = prefix;
     this.factoryId = 66;
@@ -22,11 +24,11 @@ function PrefixFilter(prefix) {
 }
 
 PrefixFilter.prototype.readData = function (inp) {
-    this.prefix = inp.readString();
+    this.prefix = TestUtil.readStringFromInput(inp);
 };
 
 PrefixFilter.prototype.writeData = function (outp) {
-    outp.writeString(this.prefix);
+    TestUtil.writeStringToOutput(outp, this.prefix);
 };
 
 module.exports = PrefixFilter;

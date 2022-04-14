@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,13 @@ import {DataInput} from '../Data';
 import {ClassDefinition, FieldDefinition} from './ClassDefinition';
 import {Portable, FieldType} from '../Portable';
 import * as Long from 'long';
+import {
+    BigDecimal,
+    LocalDate,
+    LocalDateTime,
+    LocalTime,
+    OffsetDateTime
+} from '../../core';
 
 /** @internal */
 export class MorphingPortableReader extends DefaultPortableReader {
@@ -46,7 +53,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
             case FieldType.SHORT:
                 return super.readShort(fieldName);
             default:
-                throw this.createIncompatibleClassChangeError(fieldDef, FieldType.INT);
+                throw MorphingPortableReader.createIncompatibleClassChangeError(fieldDef, FieldType.INT);
         }
     }
 
@@ -67,7 +74,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
             case FieldType.SHORT:
                 return Long.fromNumber(super.readShort(fieldName));
             default:
-                throw this.createIncompatibleClassChangeError(fieldDef, FieldType.LONG);
+                throw MorphingPortableReader.createIncompatibleClassChangeError(fieldDef, FieldType.LONG);
         }
     }
 
@@ -92,7 +99,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
             case FieldType.SHORT:
                 return super.readShort(fieldName);
             default:
-                throw this.createIncompatibleClassChangeError(fieldDef, FieldType.DOUBLE);
+                throw MorphingPortableReader.createIncompatibleClassChangeError(fieldDef, FieldType.DOUBLE);
         }
     }
 
@@ -113,7 +120,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
             case FieldType.SHORT:
                 return super.readShort(fieldName);
             default:
-                throw this.createIncompatibleClassChangeError(fieldDef, FieldType.FLOAT);
+                throw MorphingPortableReader.createIncompatibleClassChangeError(fieldDef, FieldType.FLOAT);
         }
     }
 
@@ -128,7 +135,7 @@ export class MorphingPortableReader extends DefaultPortableReader {
             case FieldType.SHORT:
                 return super.readShort(fieldName);
             default:
-                throw this.createIncompatibleClassChangeError(fieldDef, FieldType.SHORT);
+                throw MorphingPortableReader.createIncompatibleClassChangeError(fieldDef, FieldType.SHORT);
         }
     }
 
@@ -196,6 +203,48 @@ export class MorphingPortableReader extends DefaultPortableReader {
         return this.readString(fieldName);
     }
 
+    readDecimal(fieldName: string): BigDecimal {
+        return this.validateCompatibleAndRead(fieldName, FieldType.DECIMAL, super.readDecimal);
+    }
+
+    readTime(fieldName: string): LocalTime {
+        return this.validateCompatibleAndRead(fieldName, FieldType.TIME, super.readTime);
+    }
+
+    readDate(fieldName: string): LocalDate {
+        return this.validateCompatibleAndRead(fieldName, FieldType.DATE, super.readDate);
+    }
+
+    readTimestamp(fieldName: string): LocalDateTime {
+        return this.validateCompatibleAndRead(fieldName, FieldType.TIMESTAMP, super.readTimestamp);
+    }
+
+    readTimestampWithTimezone(fieldName: string): OffsetDateTime {
+        return this.validateCompatibleAndRead(fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE, super.readTimestampWithTimezone);
+    }
+
+    readDecimalArray(fieldName: string): BigDecimal[] {
+        return this.validateCompatibleAndRead(fieldName, FieldType.DECIMAL_ARRAY, super.readDecimalArray);
+    }
+
+    readTimeArray(fieldName: string): LocalTime[] {
+        return this.validateCompatibleAndRead(fieldName, FieldType.TIME_ARRAY, super.readTimeArray);
+    }
+
+    readDateArray(fieldName: string): LocalDate[] {
+        return this.validateCompatibleAndRead(fieldName, FieldType.DATE_ARRAY, super.readDateArray);
+    }
+
+    readTimestampArray(fieldName: string): LocalDateTime[] {
+        return this.validateCompatibleAndRead(fieldName, FieldType.TIMESTAMP_ARRAY, super.readTimestampArray);
+    }
+
+    readTimestampWithTimezoneArray(fieldName: string): OffsetDateTime[] {
+        return this.validateCompatibleAndRead(
+            fieldName, FieldType.TIMESTAMP_WITH_TIMEZONE_ARRAY, super.readTimestampWithTimezoneArray
+        );
+    }
+
     private validateCompatibleAndRead(fieldName: string,
                                       expectedType: FieldType,
                                       readFn: (fieldName: string) => any): any {
@@ -204,12 +253,12 @@ export class MorphingPortableReader extends DefaultPortableReader {
             return undefined;
         }
         if (fd.getType() !== expectedType) {
-            throw this.createIncompatibleClassChangeError(fd, expectedType);
+            throw MorphingPortableReader.createIncompatibleClassChangeError(fd, expectedType);
         }
         return readFn.call(this, fieldName);
     }
 
-    private createIncompatibleClassChangeError(fd: FieldDefinition, expectedType: FieldType): Error {
+    private static createIncompatibleClassChangeError(fd: FieldDefinition, expectedType: FieldType): Error {
         return new TypeError(`Incompatible to read ${expectedType} from ${fd.getType()} while reading field : ${fd.getName()}`);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,10 @@ import {NearCache, NearCacheImpl} from './NearCache';
 import {SerializationService} from '../serialization/SerializationService';
 import {ClientConfig, ClientConfigImpl} from '../config';
 
-/** @internal */
+/**
+ * Gets, creates, and destroys Near Caches.
+ * @internal
+ */
 export class NearCacheManager {
 
     private readonly caches: Map<string, NearCache> = new Map();

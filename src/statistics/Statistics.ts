@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,37 @@
 /** @ignore *//** */
 
 import {Connection} from '../network/Connection';
-import {CLIENT_TYPE, ConnectionRegistry} from '../network/ConnectionManager';
-import {Properties} from '../config/Properties';
+import {CLIENT_TYPE, ConnectionManager} from '../network/ConnectionManager';
 import {ClientStatisticsCodec} from '../codec/ClientStatisticsCodec';
-import {
-    MetricsCompressor,
-    MetricDescriptor,
-    ProbeUnit,
-    ValueType
-} from './MetricsCompressor';
-import {
-    scheduleWithRepetition,
-    cancelRepetitionTask,
-    Task
-} from '../util/Util';
+import {MetricDescriptor, MetricsCompressor, ProbeUnit, ValueType} from './MetricsCompressor';
+import {cancelRepetitionTask, scheduleWithRepetition, Task} from '../util/Util';
 import * as os from 'os';
 import {BuildInfo} from '../BuildInfo';
 import {ILogger} from '../logging/ILogger';
 import * as Long from 'long';
 import {InvocationService} from '../invocation/InvocationService';
 import {NearCacheManager} from '../nearcache/NearCacheManager';
+import {MetricsConfig} from '../config/MetricsConfig';
 
 type GaugeDescription = {
     gaugeFn: () => number;
     type: ValueType;
+    unit?: ProbeUnit;
 }
 
 /**
  * This class is the main entry point for collecting and sending the client
  * statistics to the cluster. If the client statistics feature is enabled,
  * it will be scheduled for periodic statistics collection and sent.
+ *
+ * Uses metricsConfig as configuration. The config from statistics properties
+ * will be used if the metrics counterpart and statistics property is set. This logic
+ * is in ConfigBuilder.
  * @internal
  */
 export class Statistics {
 
     public static readonly PERIOD_SECONDS_DEFAULT_VALUE = 3;
-    private static readonly ENABLED = 'hazelcast.client.statistics.enabled';
     private static readonly PERIOD_SECONDS = 'hazelcast.client.statistics.period.seconds';
 
     private static readonly NEAR_CACHE_CATEGORY_PREFIX: string = 'nc.';
@@ -61,24 +56,22 @@ export class Statistics {
     private static readonly EMPTY_STAT_VALUE: string = '';
     private readonly allGauges: { [name: string]: GaugeDescription } = {};
     private readonly enabled: boolean;
-    private task: Task;
+    private statisticsSendTask: Task;
     private compressorErrorLogged = false;
 
     constructor(
         private readonly logger: ILogger,
-        private readonly properties: Properties,
+        private readonly metricsConfig: MetricsConfig,
         private readonly clientName: string,
         private readonly invocationService: InvocationService,
         private readonly nearCacheManager: NearCacheManager,
-        private readonly connectionRegistry: ConnectionRegistry
+        private readonly connectionManager: ConnectionManager
     ) {
-        this.properties = properties;
-        this.enabled = this.properties[Statistics.ENABLED] as boolean;
+        this.enabled = this.metricsConfig.enabled;
         this.logger = logger;
         this.invocationService = invocationService;
         this.clientName = clientName;
         this.nearCacheManager = nearCacheManager;
-        this.connectionRegistry = connectionRegistry;
     }
 
     /**
@@ -91,7 +84,7 @@ export class Statistics {
 
         this.registerMetrics();
 
-        let periodSeconds = this.properties[Statistics.PERIOD_SECONDS] as number;
+        let periodSeconds = this.metricsConfig.collectionFrequencySeconds;
         if (periodSeconds <= 0) {
             const defaultValue = Statistics.PERIOD_SECONDS_DEFAULT_VALUE;
             this.logger.warn('Statistics', 'Provided client statistics ' + Statistics.PERIOD_SECONDS
@@ -100,14 +93,14 @@ export class Statistics {
             periodSeconds = defaultValue;
         }
 
-        this.task = this.schedulePeriodicStatisticsSendTask(periodSeconds);
+        this.statisticsSendTask = this.schedulePeriodicStatisticsSendTask(periodSeconds);
 
         this.logger.info('Statistics', 'Client statistics is enabled with period ' + periodSeconds + ' seconds.');
     }
 
     stop(): void {
-        if (this.task != null) {
-            cancelRepetitionTask(this.task);
+        if (this.statisticsSendTask != null) {
+            cancelRepetitionTask(this.statisticsSendTask);
         }
     }
 
@@ -119,7 +112,7 @@ export class Statistics {
             this.compressorErrorLogged = false;
             const collectionTimestamp = Long.fromNumber(Date.now());
 
-            const connection = this.connectionRegistry.getRandomConnection();
+            const connection = this.connectionManager.getConnectionRegistry().getRandomConnection();
             if (connection == null) {
                 this.logger.trace('Statistics', 'Can not send client statistics to the server. No connection found.');
                 return;
@@ -161,23 +154,28 @@ export class Statistics {
         this.registerGauge('runtime.totalMemory', () => process.memoryUsage().heapTotal);
         this.registerGauge('runtime.uptime', () => process.uptime() * 1000);
         this.registerGauge('runtime.usedMemory', () => process.memoryUsage().heapUsed);
+        this.registerGauge('tcp.bytesReceived', () => this.connectionManager.getTotalBytesRead(), undefined, ProbeUnit.BYTES);
+        this.registerGauge('tcp.bytesSend', () => this.connectionManager.getTotalBytesWritten(), undefined, ProbeUnit.BYTES);
     }
 
-    private registerGauge(gaugeName: string,
-                          gaugeFn: () => number,
-                          type: ValueType = ValueType.LONG): void {
+    private registerGauge(
+        gaugeName: string,
+        gaugeFn: () => number,
+        type: ValueType = ValueType.LONG,
+        unit?: ProbeUnit
+    ): void {
         try {
             // try a gauge function read, we will register it if it succeeds.
             gaugeFn();
-            this.allGauges[gaugeName] = { gaugeFn, type };
+            this.allGauges[gaugeName] = { gaugeFn, type, unit };
         } catch (err) {
             this.logger.warn('Statistics', 'Could not collect data for gauge '
                 + gaugeName + ', it will not be registered', err);
-            this.allGauges[gaugeName] = { gaugeFn: () => null, type };
+            this.allGauges[gaugeName] = { gaugeFn: () => null, type, unit };
         }
     }
 
-    private addAttribute(stats: string[],
+    private static addAttribute(stats: string[],
                          name: string,
                          value: number | string,
                          keyPrefix?: string): void {
@@ -211,7 +209,7 @@ export class Statistics {
                     compressor.addDouble(descriptor, value);
                     break;
                 default:
-                    throw new Error('Unexpected type: ' + type);
+                    this.logCompressorError(new Error('Unexpected type: ' + type));
             }
         } catch (err) {
             this.logCompressorError(err);
@@ -245,28 +243,28 @@ export class Statistics {
     private fillMetrics(stats: string[],
                         compressor: MetricsCompressor,
                         connection: Connection): void {
-        this.addAttribute(stats, 'lastStatisticsCollectionTime', Date.now());
-        this.addAttribute(stats, 'enterprise', 'false');
-        this.addAttribute(stats, 'clientType', CLIENT_TYPE);
-        this.addAttribute(stats, 'clientVersion', BuildInfo.getClientVersion());
-        this.addAttribute(stats, 'clusterConnectionTimestamp', connection.getStartTime());
-        this.addAttribute(stats, 'clientAddress', connection.getLocalAddress().toString());
-        this.addAttribute(stats, 'clientName', this.clientName);
+        Statistics.addAttribute(stats, 'lastStatisticsCollectionTime', Date.now());
+        Statistics.addAttribute(stats, 'enterprise', 'false');
+        Statistics.addAttribute(stats, 'clientType', CLIENT_TYPE);
+        Statistics.addAttribute(stats, 'clientVersion', BuildInfo.getClientVersion());
+        Statistics.addAttribute(stats, 'clusterConnectionTimestamp', connection.getStartTime());
+        Statistics.addAttribute(stats, 'clientAddress', connection.getLocalAddress().toString());
+        Statistics.addAttribute(stats, 'clientName', this.clientName);
 
         for (const gaugeName in this.allGauges) {
             const gauge = this.allGauges[gaugeName];
             try {
                 const value = gauge.gaugeFn();
-                this.addSimpleMetric(compressor, gaugeName, value, gauge.type);
+                this.addSimpleMetric(compressor, gaugeName, value, gauge.type, gauge.unit);
                 // necessary for compatibility with Management Center 4.0
-                this.addAttribute(stats, gaugeName, value);
+                Statistics.addAttribute(stats, gaugeName, value);
             } catch (err) {
                 this.logger.trace('Statistics', 'Could not collect data for gauge ' + gaugeName, err);
             }
         }
     }
 
-    private getNameWithPrefix(name: string): string[] {
+    private static getNameWithPrefix(name: string): string[] {
         const escapedName = [Statistics.NEAR_CACHE_CATEGORY_PREFIX];
         const prefixLen = Statistics.NEAR_CACHE_CATEGORY_PREFIX.length;
         escapedName.push(name);
@@ -274,11 +272,11 @@ export class Statistics {
             escapedName.splice(prefixLen, 1);
         }
 
-        this.escapeSpecialCharacters(escapedName, prefixLen);
+        Statistics.escapeSpecialCharacters(escapedName, prefixLen);
         return escapedName;
     }
 
-    private escapeSpecialCharacters(buffer: string[], start: number): void {
+    private static escapeSpecialCharacters(buffer: string[], start: number): void {
         for (let i = start; i < buffer.length; i++) {
             const c = buffer[i];
             if (c === '=' || c === '.' || c === ',' || c === Statistics.ESCAPE_CHAR) {
@@ -291,7 +289,7 @@ export class Statistics {
     private addNearCacheStats(stats: string[], compressor: MetricsCompressor): void {
         for (const nearCache of this.nearCacheManager.listAllNearCaches()) {
             const name = nearCache.getName();
-            const nearCacheNameWithPrefix = this.getNameWithPrefix(name);
+            const nearCacheNameWithPrefix = Statistics.getNameWithPrefix(name);
             nearCacheNameWithPrefix.push('.');
             const nameWithPrefix = nearCacheNameWithPrefix.join('');
 
@@ -326,13 +324,13 @@ export class Statistics {
                                type: ValueType,
                                unit: ProbeUnit): void {
         this.addMetric(compressor,
-            this.nearCacheDescriptor(metric, nearCacheName, unit),
+            Statistics.nearCacheDescriptor(metric, nearCacheName, unit),
             value, type);
         // necessary for compatibility with Management Center 4.0
-        this.addAttribute(stats, metric, value, nearCacheNameWithPrefix);
+        Statistics.addAttribute(stats, metric, value, nearCacheNameWithPrefix);
     }
 
-    private nearCacheDescriptor(metric: string,
+    private static nearCacheDescriptor(metric: string,
                                 nearCacheName: string,
                                 unit?: ProbeUnit): MetricDescriptor {
         const descriptor: MetricDescriptor = {

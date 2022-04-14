@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,15 +55,15 @@ export class StaleReadDetectorImpl implements StaleReadDetector {
 }
 
 class AlwaysFreshStaleReadDetectorImpl implements StaleReadDetector {
-    isStaleRead(key: any, record: DataRecord): boolean {
+    isStaleRead(_key: any, _record: DataRecord): boolean {
         return false;
     }
 
-    getPartitionId(key: any): number {
+    getPartitionId(_key: any): number {
         return 0;
     }
 
-    getMetadataContainer(partitionId: number): MetadataContainer {
+    getMetadataContainer(_partitionId: number): MetadataContainer {
         return null;
     }
 }

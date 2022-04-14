@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,15 @@ const thrift = require('thrift');
 const RemoteController = require('./RemoteController');
 
 function HzRemoteController() {
-    const transport = thrift.TBufferedTransport();
-    const protocol = thrift.TBinaryProtocol();
+    const transport = thrift.TFramedTransport;
+    const protocol = thrift.TBinaryProtocol;
 
     const connection = thrift.createConnection('localhost', 9701, {
         transport: transport,
         protocol: protocol
     });
 
-    connection.on('error', function(err) {
+    connection.on('error', (err) => {
         console.log(err);
     });
 

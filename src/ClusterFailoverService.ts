@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 /** @ignore *//** */
 
 import {AddressProvider} from './connection/AddressProvider';
-import {ClientConfigImpl} from './config';
+import {ClientConfigImpl, SecurityConfigImpl} from './config';
 import {IllegalStateError} from './core';
 import {LifecycleService} from './LifecycleService';
 import {HazelcastCloudAddressProvider} from './discovery/HazelcastCloudAddressProvider';
@@ -81,13 +81,16 @@ export class CandidateClusterContext {
     readonly clusterName: string;
     readonly addressProvider: AddressProvider;
     readonly customCredentials: any;
+    readonly securityConfig: SecurityConfigImpl;
 
     constructor(clusterName: string,
                 addressProvider: AddressProvider,
-                customCredentials: any) {
+                customCredentials: any,
+                securityConfig: SecurityConfigImpl) {
         this.clusterName = clusterName;
         this.addressProvider = addressProvider;
         this.customCredentials = customCredentials;
+        this.securityConfig = securityConfig;
     }
 }
 
@@ -114,7 +117,7 @@ export class ClusterFailoverServiceBuilder {
         for (const config of this.clientConfigs) {
             const addressProvider = this.createAddressProvider(config);
             const context = new CandidateClusterContext(
-                config.clusterName, addressProvider, config.customCredentials);
+                config.clusterName, addressProvider, config.customCredentials, config.security);
             contexts.push(context);
         }
         return new ClusterFailoverService(this.maxTryCount, contexts, this.lifecycleService);
@@ -145,12 +148,12 @@ export class ClusterFailoverServiceBuilder {
         if (discoveryToken != null) {
             const urlEndpoint = HazelcastCloudDiscovery.createUrlEndpoint(config.properties, discoveryToken);
             return new HazelcastCloudAddressProvider(
-                urlEndpoint, this.getConnectionTimeoutMillis(config), this.loggingService.getLogger());
+                urlEndpoint, ClusterFailoverServiceBuilder.getConnectionTimeoutMillis(config), this.loggingService.getLogger());
         }
         return null;
     }
 
-    private getConnectionTimeoutMillis(config: ClientConfigImpl): number {
+    private static getConnectionTimeoutMillis(config: ClientConfigImpl): number {
         const networkConfig = config.network;
         const connTimeout = networkConfig.connectionTimeout;
         return connTimeout === 0 ? Number.MAX_SAFE_INTEGER : connTimeout;

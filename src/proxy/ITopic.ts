@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import {MessageListener} from './MessageListener';
  * This interface stand for reliable topic, i.e. it uses a Ringbuffer to store
  * events. The events in the Ringbuffer are replicated, so they won't get
  * lost when a node goes down.
+ *
+ * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
+ * serializer for a certain type.
  */
 export interface ITopic<E> extends DistributedObject {
 

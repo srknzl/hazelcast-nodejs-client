@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,18 +65,14 @@ export class DataRecord {
         return x.accessHit - y.accessHit;
     }
 
-    public static randomComp(x: DataRecord, y: DataRecord): number {
+    public static randomComp(_x: DataRecord, _y: DataRecord): number {
         return Math.random() - 0.5;
     }
 
     isExpired(maxIdleSeconds: number): boolean {
         const now = Date.now();
-        if ((this.expirationTime > 0 && this.expirationTime < now) ||
-            (maxIdleSeconds > 0 && this.lastAccessTime + maxIdleSeconds * 1000 < now)) {
-            return true;
-        } else {
-            return false;
-        }
+        return (this.expirationTime > 0 && this.expirationTime < now) ||
+            (maxIdleSeconds > 0 && this.lastAccessTime + maxIdleSeconds * 1000 < now);
     }
 
     setAccessTime(): void {

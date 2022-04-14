@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,8 @@ import {RoundRobinLB} from './util/RoundRobinLB';
 import {ClusterViewListenerService} from './listener/ClusterViewListenerService';
 import {ClientMessage} from './protocol/ClientMessage';
 import {Connection} from './network/Connection';
-import {ConnectionRegistryImpl} from './network/ConnectionManager';
+import {ConnectionRegistryImpl} from './network/ConnectionRegistry';
+import {SqlService, SqlServiceImpl} from './sql/SqlService';
 
 /**
  * Hazelcast client instance. When you want to use Hazelcast's distributed
@@ -124,6 +125,10 @@ export class HazelcastClient {
     private mapRepairingTask: RepairingTask;
     /** @internal */
     private readonly connectionRegistry: ConnectionRegistryImpl;
+    /** @internal */
+    private readonly sqlService: SqlService;
+    /** @internal */
+    private shutdownPromise: Promise<void> | undefined;
 
     /** @internal */
     constructor(config?: ClientConfigImpl, failoverConfig?: ClientFailoverConfigImpl) {
@@ -133,11 +138,6 @@ export class HazelcastClient {
             this.config = failoverConfig.clientConfigs[0];
         }
         this.loadBalancer = this.initLoadBalancer();
-        this.connectionRegistry = new ConnectionRegistryImpl(
-            this.config.connectionStrategy,
-            this.config.network.smartRouting,
-            this.loadBalancer
-        );
         this.failoverConfig = failoverConfig;
         this.errorFactory = new ClientErrorFactory();
         this.serializationService = new SerializationServiceV1(this.config.serialization);
@@ -161,6 +161,13 @@ export class HazelcastClient {
             this.config,
             this.loggingService.getLogger(),
             this.clusterFailoverService
+        );
+        this.connectionRegistry = new ConnectionRegistryImpl(
+            this.config.connectionStrategy.asyncStart,
+            this.config.connectionStrategy.reconnectMode,
+            this.config.network.smartRouting,
+            this.loadBalancer,
+            this.clusterService
         );
         this.invocationService = new InvocationService(
             this.config,
@@ -188,8 +195,7 @@ export class HazelcastClient {
             this.loggingService.getLogger(),
             this.config.network.smartRouting,
             this.connectionManager,
-            this.invocationService,
-            this.connectionRegistry
+            this.invocationService
         );
         this.lockReferenceIdGenerator = new LockReferenceIdGenerator();
         this.proxyManager = new ProxyManager(
@@ -207,19 +213,18 @@ export class HazelcastClient {
         );
         this.statistics = new Statistics(
             this.loggingService.getLogger(),
-            this.config.properties,
+            this.config.metrics,
             this.instanceName,
             this.invocationService,
             this.nearCacheManager,
-            this.connectionRegistry
+            this.connectionManager
         );
         this.clusterViewListenerService = new ClusterViewListenerService(
             this.loggingService.getLogger(),
             this.connectionManager,
             this.partitionService as PartitionServiceImpl,
             this.clusterService,
-            this.invocationService,
-            this.connectionRegistry
+            this.invocationService
         );
         this.cpSubsystem = new CPSubsystemImpl(
             this.loggingService.getLogger(),
@@ -227,12 +232,18 @@ export class HazelcastClient {
             this.invocationService,
             this.serializationService
         );
+        this.sqlService = new SqlServiceImpl(
+            this.serializationService,
+            this.invocationService,
+            this.connectionManager
+        );
     }
 
     /**
      * Creates a new client object and automatically connects to cluster.
      * @param config Client config. Default client config is used when this parameter
      *               is absent.
+     * @throws {@link InvalidConfigurationError} before returning if `config` is not a valid configuration object.
      * @returns a new client instance
      */
     static newHazelcastClient(config?: ClientConfig): Promise<HazelcastClient> {
@@ -249,7 +260,7 @@ export class HazelcastClient {
      *
      * @param failoverConfig Configuration object describing the failover client configs and try count
      * @returns a new client instance
-     * @throws InvalidConfigurationError if the provided failover configuration is not valid
+     * @throws {@link InvalidConfigurationError} before returning if the provided failover configuration is not valid
      */
     static newHazelcastFailoverClient(failoverConfig?: ClientFailoverConfig): Promise<HazelcastClient> {
         const configBuilder = new FailoverConfigBuilder(failoverConfig);
@@ -280,7 +291,14 @@ export class HazelcastClient {
     }
 
     /**
-     * Gives all known distributed objects in the cluster.
+     * Returns all {@link DistributedObject}s, that is all maps, queues, topics, locks etc.
+     *
+     * The results are returned on a best-effort basis. The result might miss
+     * just-created objects and contain just-deleted objects. An existing
+     * object can also be missing from the list occasionally. One cluster
+     * member is queried to obtain the list.
+     *
+     * @return the collection of all instances in the cluster
      */
     getDistributedObjects(): Promise<DistributedObject[]> {
         const clientMessage = ClientGetDistributedObjectsCodec.encodeRequest();
@@ -472,12 +490,24 @@ export class HazelcastClient {
     }
 
     /**
+     * Returns a service to execute distributed SQL queries.
+     * The service is in beta state. Behavior and API might be changed in future releases.
+     *
+     * @returns SQL service
+     *
+     * see {@link SqlService}
+     */
+    getSql(): SqlService {
+        return this.sqlService;
+    }
+
+    /**
      * Registers a distributed object listener to cluster.
-     * @param listener distributed object listener function.
+     * @param listener distributed object listener function. This will be called with {@link DistributedObjectEvent}.
      * @returns registration id of the listener.
      */
     addDistributedObjectListener(listener: DistributedObjectListener): Promise<string> {
-        return this.proxyManager.addDistributedObjectListener(listener);
+        return this.listenerService.addDistributedObjectListener(listener);
     }
 
     /**
@@ -486,7 +516,7 @@ export class HazelcastClient {
      * @returns `true` if registration was removed, `false` otherwise.
      */
     removeDistributedObjectListener(listenerId: string): Promise<boolean> {
-        return this.proxyManager.removeDistributedObjectListener(listenerId);
+        return this.listenerService.deregisterListener(listenerId);
     }
 
     /** @internal */
@@ -496,10 +526,12 @@ export class HazelcastClient {
 
     /**
      * Shuts down this client instance.
+     *
+     * @return Shutdown promise. Multiple invocations will return the same promise.
      */
     shutdown(): Promise<void> {
-        if (!this.lifecycleService.isRunning()) {
-            return Promise.resolve();
+        if (this.shutdownPromise) { // return the initiated shutdown promise if it exists.
+            return this.shutdownPromise;
         }
         this.lifecycleService.onShutdownStart();
 
@@ -509,7 +541,7 @@ export class HazelcastClient {
         this.nearCacheManager.destroyAllNearCaches();
         this.proxyManager.destroy();
         this.statistics.stop();
-        return this.cpSubsystem.shutdown()
+        this.shutdownPromise = this.cpSubsystem.shutdown()
             .then(() => {
                 this.invocationService.shutdown();
                 this.connectionManager.shutdown();
@@ -517,6 +549,7 @@ export class HazelcastClient {
             .then(() => {
                 this.lifecycleService.onShutdownFinished();
             });
+        return this.shutdownPromise;
     }
 
     /** @internal */
@@ -524,7 +557,7 @@ export class HazelcastClient {
         this.getLoggingService().getLogger()
             .info('HazelcastClient', 'Clearing local state of the client, because of a cluster restart.');
         this.nearCacheManager.clearAllNearCaches();
-        this.clusterService.clearMemberListVersion();
+        this.clusterService.clearMemberList(this.connectionRegistry);
     }
 
     /** @internal */

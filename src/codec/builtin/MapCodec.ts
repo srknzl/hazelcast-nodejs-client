@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,6 +59,6 @@ export class MapCodec {
     static decodeNullable<K, V>(clientMessage: ClientMessage,
                                 keyDecoder: (msg: ClientMessage) => K,
                                 valueDecoder: (msg: ClientMessage) => V): Map<K, V> {
-        return CodecUtil.nextFrameIsNullFrame(clientMessage) ? null : this.decode(clientMessage, keyDecoder, valueDecoder);
+        return CodecUtil.nextFrameIsNullFrame(clientMessage) ? null : MapCodec.decode(clientMessage, keyDecoder, valueDecoder);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,8 @@ import {IndexUtil} from '../util/IndexUtil';
 import {PagingPredicateHolder} from '../protocol/PagingPredicateHolder';
 import {MapEntriesWithPagingPredicateCodec} from '../codec/MapEntriesWithPagingPredicateCodec';
 
-type EntryEventHander = (key: Data, value: Data, oldValue: Data, mergingValue: Data, eventType: number,
-                         uuid: UUID, numberOfAffectedEntries: number) => void;
+type EntryEventHandler = (key: Data, value: Data, oldValue: Data, mergingValue: Data, eventType: number,
+                          uuid: UUID, numberOfAffectedEntries: number) => void;
 
 /** @internal */
 export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
@@ -111,7 +111,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
     aggregateWithPredicate<R>(aggregator: Aggregator<R>, predicate: Predicate): Promise<R> {
         assertNotNull(aggregator);
         assertNotNull(predicate);
-        this.checkNotPagingPredicate(predicate);
+        MapProxy.checkNotPagingPredicate(predicate);
         const aggregatorData = this.toData(aggregator);
         const predicateData = this.toData(predicate);
         return this.encodeInvokeOnRandomTarget(MapAggregateWithPredicateCodec, aggregatorData, predicateData)
@@ -537,7 +537,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             });
     }
 
-    protected finalizePutAll(partitionsToKeys: { [id: string]: Array<[Data, Data]> }): void {
+    protected finalizePutAll(_partitionsToKeys: { [id: string]: Array<[Data, Data]> }): void {
         // No-op
     }
 
@@ -674,6 +674,8 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
         const partitionService = this.partitionService;
         const partitionsToKeys: { [id: number]: Array<[Data, Data]> } = {};
         for (const pair of pairs) {
+            assertNotNull(pair[0]);
+            assertNotNull(pair[1]);
             const keyData = this.toData(pair[0]);
             const pId: number = partitionService.getPartitionId(keyData);
             if (!partitionsToKeys[pId]) {
@@ -715,7 +717,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
         const toObject = this.toObject.bind(this);
         const entryEventHandler = (key: Data, value: Data, oldValue: Data, mergingValue: Data, eventType: number,
                                    uuid: UUID, numberOfAffectedEntries: number): void => {
-            const member = this.clusterService.getMember(uuid);
+            const member = this.clusterService.getMember(uuid.toString());
             const name = this.name;
 
             const entryEvent = new EntryEvent(
@@ -760,7 +762,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
             }
         };
         let codec: ListenerMessageCodec;
-        let listenerHandler: (message: ClientMessage, handler: EntryEventHander) => void;
+        let listenerHandler: (message: ClientMessage, handler: EntryEventHandler) => void;
         if (key && predicate) {
             const keyData = this.toData(key);
             const predicateData = this.toData(predicate);
@@ -843,7 +845,7 @@ export class MapProxy<K, V> extends BaseProxy implements IMap<K, V> {
         };
     }
 
-    private checkNotPagingPredicate(v: Predicate): void {
+    private static checkNotPagingPredicate(v: Predicate): void {
         if (v instanceof PagingPredicateImpl) {
             throw new RangeError('Paging predicate is not supported.');
         }

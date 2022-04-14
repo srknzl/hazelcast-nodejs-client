@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,15 +34,17 @@ export interface ConnectionRetryConfig {
     maxBackoffMillis?: number;
 
     /**
-     * Defines timeout value in milliseconds for the client to give up a connection
-     * attempt to the cluster. Must be non-negative. By default, set to `120000`
-     * (2 minutes).
+     * Defines timeout value in milliseconds for the client's connection
+     * attempts to a cluster. Must be non-negative unless it is set to -1.
+     * If set to -1, the client tries to connect to the cluster forever.
+     * If set to 0, the client won't try to connect anymore after the first attempt fails.
+     * By default, set to -1 (no timeout).
      */
     clusterConnectTimeoutMillis?: number;
 
     /**
      * Defines the factor with which to multiply backoff after a failed retry.
-     * Must be greater than or equal to `1`. By default, set to `1`.
+     * Must be greater than or equal to `1`. By default, set to `1.05`.
      */
     multiplier?: number;
 
@@ -65,8 +67,8 @@ export class ConnectionRetryConfigImpl implements ConnectionRetryConfig {
 
     initialBackoffMillis = 1000;
     maxBackoffMillis = 30000;
-    clusterConnectTimeoutMillis = 120000;
-    multiplier = 1;
+    clusterConnectTimeoutMillis = -1;
+    multiplier = 1.05;
     jitter = 0;
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,7 @@ import {ClientOfflineError, UUID} from './core';
 import {SerializationService} from './serialization/SerializationService';
 
 /**
- * Partition service for Hazelcast clients. Allows to retrieve information
- * about the partition count, the partition owner or the partitionId of a key.
+ * Retrieves information about the partition count, the partition owner or the partitionId of a key.
  */
 export interface PartitionService {
 
@@ -47,7 +46,7 @@ export interface PartitionService {
      *
      * @param key
      * @returns the partition id.
-     * @throws ClientOfflineError if the partition table has not arrived yet.
+     * @throws {@link ClientOfflineError} if the partition table has not arrived yet.
      */
     getPartitionId(key: any): number;
 
@@ -85,7 +84,7 @@ export class PartitionServiceImpl implements PartitionService {
         if (!this.shouldBeApplied(connection, partitions, partitionStateVersion, this.partitionTable)) {
             return;
         }
-        const newPartitions = this.convertToMap(partitions);
+        const newPartitions = PartitionServiceImpl.convertToMap(partitions);
         this.partitionTable.connection = connection;
         this.partitionTable.partitionStateVersion = partitionStateVersion;
         this.partitionTable.partitions = newPartitions;
@@ -129,7 +128,7 @@ export class PartitionServiceImpl implements PartitionService {
         return this.partitionCount === newPartitionCount;
     }
 
-    private convertToMap(partitions: Array<[UUID, number[]]>): Map<number, UUID> {
+    private static convertToMap(partitions: Array<[UUID, number[]]>): Map<number, UUID> {
         const newPartitions = new Map<number, UUID>();
         for (const entry of partitions) {
             const uuid = entry[0];

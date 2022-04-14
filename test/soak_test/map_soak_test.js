@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ const listener = {
     },
 };
 
-process.on('SIGINT', function () {
+process.on('SIGINT', () => {
     console.log('Shutting down!');
     stopTest = true;
     nz++;
@@ -132,7 +132,7 @@ function completeOperation() {
     if (totalOps % 10000 === 0) {
         console.log(`Completed operation count: ${totalOps}`);
         const lagStartTime = process.hrtime();
-        setImmediate(function () {
+        setImmediate(() => {
             const eventLoopLag = process.hrtime(lagStartTime);
             if (hrtimeToNanoSec(eventLoopLag) > 40 * NS_IN_MS) {
                 console.log(`Experiencing event loop lag: ${hrtimeToMilliSec(eventLoopLag)} ms.`);

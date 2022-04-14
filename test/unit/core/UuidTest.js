@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ const Long = require('long');
 const { UUID } = require('../../../lib/core/UUID');
 
 describe('UuidTest', function () {
-
     it('with small most significant high bits', function () {
         const uuid = new UUID(new Long(-99999, 1), new Long(213231, -213321));
         // Should pad first part with zeros

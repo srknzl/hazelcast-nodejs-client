@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,10 @@
  */
 /** @ignore *//** */
 
-import {ClientAddDistributedObjectListenerCodec} from '../codec/ClientAddDistributedObjectListenerCodec';
 import {ClientCreateProxyCodec} from '../codec/ClientCreateProxyCodec';
 import {ClientDestroyProxyCodec} from '../codec/ClientDestroyProxyCodec';
-import {ClientRemoveDistributedObjectListenerCodec} from '../codec/ClientRemoveDistributedObjectListenerCodec';
 import {DistributedObject} from '../core/DistributedObject';
 import {Invocation, InvocationService} from '../invocation/InvocationService';
-import {ListenerMessageCodec} from '../listener/ListenerMessageCodec';
 import {FlakeIdGeneratorProxy} from './flakeid/FlakeIdGeneratorProxy';
 import {ListProxy} from './ListProxy';
 import {MapProxy} from './MapProxy';
@@ -32,10 +29,8 @@ import {ReplicatedMapProxy} from './ReplicatedMapProxy';
 import {RingbufferProxy} from './ringbuffer/RingbufferProxy';
 import {SetProxy} from './SetProxy';
 import {ReliableTopicProxy} from './topic/ReliableTopicProxy';
-import {DistributedObjectEvent, DistributedObjectListener} from '../core/DistributedObjectListener';
 import {deferredPromise} from '../util/Util';
 import {ClientMessage} from '../protocol/ClientMessage';
-import {UUID} from '../core/UUID';
 import {ClientCreateProxiesCodec} from '../codec/ClientCreateProxiesCodec';
 import {BaseProxy} from './BaseProxy';
 import {Ringbuffer} from './Ringbuffer';
@@ -45,7 +40,7 @@ import {NearCachedMapProxy} from './NearCachedMapProxy';
 import {ILogger} from '../logging';
 import {PartitionService} from '../PartitionService';
 import {SerializationService} from '../serialization/SerializationService';
-import {ConnectionRegistry} from '../network/ConnectionManager';
+import {ConnectionRegistry} from '../network/ConnectionRegistry';
 import {NearCacheManager} from '../nearcache/NearCacheManager';
 import {RepairingTask} from '../nearcache/RepairingTask';
 import {ClusterService} from '../invocation/ClusterService';
@@ -55,7 +50,10 @@ import {LockReferenceIdGenerator} from './LockReferenceIdGenerator';
 export const NAMESPACE_SEPARATOR = '/';
 const RINGBUFFER_PREFIX = '_hz_rb_';
 
-/** @internal */
+/**
+ * Returns distributed objects in the cluster. Also creates and destroys proxies both locally and remotely
+ * @internal
+ */
 export class ProxyManager {
 
     public static readonly MAP_SERVICE: string = 'hz:impl:mapService';
@@ -176,23 +174,6 @@ export class ProxyManager {
         return Promise.resolve();
     }
 
-    public addDistributedObjectListener(distributedObjectListener: DistributedObjectListener): Promise<string> {
-        const handler = (clientMessage: ClientMessage): void => {
-            const converterFunc = (objectName: string, serviceName: string, eventType: string): void => {
-                eventType = eventType.toLowerCase();
-                const distributedObjectEvent = new DistributedObjectEvent(eventType, serviceName, objectName);
-                distributedObjectListener(distributedObjectEvent);
-            };
-            ClientAddDistributedObjectListenerCodec.handle(clientMessage, converterFunc);
-        };
-        const codec = this.createDistributedObjectListener();
-        return this.listenerService.registerListener(codec, handler);
-    }
-
-    public removeDistributedObjectListener(listenerId: string): Promise<boolean> {
-        return this.listenerService.deregisterListener(listenerId);
-    }
-
     public destroy(): void {
         this.proxies.clear();
     }
@@ -200,20 +181,6 @@ export class ProxyManager {
     private createProxy(name: string, serviceName: string): Promise<ClientMessage> {
         const request = ClientCreateProxyCodec.encodeRequest(name, serviceName);
         return this.invocationService.invokeOnRandomTarget(request);
-    }
-
-    private createDistributedObjectListener(): ListenerMessageCodec {
-        return {
-            encodeAddRequest(localOnly: boolean): ClientMessage {
-                return ClientAddDistributedObjectListenerCodec.encodeRequest(localOnly);
-            },
-            decodeAddResponse(msg: ClientMessage): UUID {
-                return ClientAddDistributedObjectListenerCodec.decodeResponse(msg);
-            },
-            encodeRemoveRequest(listenerId: UUID): ClientMessage {
-                return ClientRemoveDistributedObjectListenerCodec.encodeRequest(listenerId);
-            },
-        };
     }
 
     private initializeLocalProxy(name: string, serviceName: string, createAtServer: boolean): Promise<DistributedObject> {
@@ -235,7 +202,7 @@ export class ProxyManager {
                 this.clusterService,
                 this.connectionRegistry
             );
-        } else if (serviceName === ProxyManager.MULTIMAP_SERVICE){
+        } else if (serviceName === ProxyManager.MULTIMAP_SERVICE) {
             localProxy = new MultiMapProxy(
                 serviceName,
                 name,
@@ -248,7 +215,7 @@ export class ProxyManager {
                 this.lockReferenceIdGenerator,
                 this.connectionRegistry
             );
-        } else if (serviceName === ProxyManager.RELIABLETOPIC_SERVICE){
+        } else if (serviceName === ProxyManager.RELIABLETOPIC_SERVICE) {
             localProxy = new ReliableTopicProxy(
                 serviceName,
                 name,
@@ -262,7 +229,7 @@ export class ProxyManager {
                 this.clusterService,
                 this.connectionRegistry
             );
-        } else if (serviceName === ProxyManager.FLAKEID_SERVICE){
+        } else if (serviceName === ProxyManager.FLAKEID_SERVICE) {
             localProxy = new FlakeIdGeneratorProxy(
                 serviceName,
                 name,

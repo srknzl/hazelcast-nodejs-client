@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 const { expect } = require('chai');
 const { SerializationServiceV1: SerializationService } = require('../../../lib/serialization/SerializationService');
+const { HeapData, TYPE_OFFSET } = require('../../../lib/serialization/HeapData');
 const { SerializationConfigImpl } = require('../../../lib/config/SerializationConfig');
 
 function IDataSerializable(val) {
@@ -103,7 +104,6 @@ CustomSerializer.prototype.write = function (writer, obj) {
 };
 
 describe('SerializationServiceTest', function () {
-
     it('should use data serializable factory', function () {
         const serializationConfig = new SerializationConfigImpl();
         serializationConfig.dataSerializableFactories[1] = idataSerializableFactory;
@@ -152,5 +152,18 @@ describe('SerializationServiceTest', function () {
 
         expect(object.val).to.equal(3);
         expect(object.self).to.equal(object);
+    });
+
+    it('should throw an error in the absence of a deserializer', function () {
+        const serializationConfig = new SerializationConfigImpl();
+        const serializationService = new SerializationService(serializationConfig);
+
+        const data = serializationService.toData(123);
+        const buffer = data.toBuffer();
+        buffer.writeInt32BE(1 << 32 - 1, TYPE_OFFSET); // mock non-existent type
+
+        expect(() => {
+            serializationService.toObject(new HeapData(buffer));
+        }).to.throw(RangeError);
     });
 });

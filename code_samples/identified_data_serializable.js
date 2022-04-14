@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,8 +37,7 @@ class Employee {
 }
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient({
+    const client = await Client.newHazelcastClient({
             serialization: {
                 dataSerializableFactories: {
                     1000: (classId) => {
@@ -49,17 +48,17 @@ class Employee {
                     }
                 }
             }
-        });
-        const map = await client.getMap('my-distributed-map');
+    });
+    const map = await client.getMap('my-distributed-map');
 
-        let employee = new Employee(42, 'John');
-        await map.put('key', employee);
+    let employee = new Employee(42, 'John');
+    await map.put('key', employee);
 
-        employee = await map.get('key');
-        console.log('Employee object:', employee);
+    employee = await map.get('key');
+    console.log('Employee object:', employee);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

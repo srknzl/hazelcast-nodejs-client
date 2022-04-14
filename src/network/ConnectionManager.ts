@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,12 +29,10 @@ import {
     InvalidConfigurationError,
     TargetDisconnectedError,
     UUID,
-    LoadBalancer,
     AddressImpl,
     Addresses,
     MemberImpl,
-    ClientOfflineError,
-    IOError
+    IOError,
 } from '../core';
 import {lookupPublicAddress} from '../core/MemberInfo';
 import {Connection} from './Connection';
@@ -47,14 +45,14 @@ import {
     scheduleWithRepetition,
     shuffleArray,
     Task,
-    timedPromise
+    timedPromise,
 } from '../util/Util';
 import {BasicSSLOptionsFactory} from '../connection/BasicSSLOptionsFactory';
 import {ILogger} from '../logging/ILogger';
 import {HeartbeatManager} from './HeartbeatManager';
 import {UuidUtil} from '../util/UuidUtil';
 import {WaitStrategy} from './WaitStrategy';
-import {ConnectionStrategyConfig, ReconnectMode} from '../config/ConnectionStrategyConfig';
+import {ReconnectMode} from '../config/ConnectionStrategyConfig';
 import {ClientConfig, ClientConfigImpl} from '../config/Config';
 import {LifecycleState, LifecycleServiceImpl, LifecycleService} from '../LifecycleService';
 import {ClientMessage} from '../protocol/ClientMessage';
@@ -70,9 +68,13 @@ import {PartitionService, PartitionServiceImpl} from '../PartitionService';
 import {AddressProvider} from '../connection/AddressProvider';
 import {ClusterService} from '../invocation/ClusterService';
 import {SerializationService} from '../serialization/SerializationService';
+import {ConnectionRegistry, ConnectionRegistryImpl} from './ConnectionRegistry';
+import {SecurityConfigImpl} from '../config';
 
-const CONNECTION_REMOVED_EVENT_NAME = 'connectionRemoved';
-const CONNECTION_ADDED_EVENT_NAME = 'connectionAdded';
+/** @internal */
+export const CONNECTION_REMOVED_EVENT_NAME = 'connectionRemoved';
+/** @internal */
+export const CONNECTION_ADDED_EVENT_NAME = 'connectionAdded';
 
 /** @internal */
 export const CLIENT_TYPE = 'NJS';
@@ -80,7 +82,8 @@ const SERIALIZATION_VERSION = 1;
 const SET_TIMEOUT_MAX_DELAY = 2147483647;
 const BINARY_PROTOCOL_VERSION = Buffer.from('CP2');
 
-enum ConnectionState {
+/** @internal */
+export enum ClientState {
     /**
      * Clients start with this state. Once a client connects to a cluster,
      * it directly switches to {@link INITIALIZED_ON_CLUSTER} instead of
@@ -101,175 +104,10 @@ enum ConnectionState {
      * it switches to this state. When a client loses all connections to
      * the current cluster and connects to a new cluster, its state goes
      * back to {@link CONNECTED_TO_CLUSTER}.
-     * <p>
+     *
      * Invocations are allowed in this state.
      */
     INITIALIZED_ON_CLUSTER = 2,
-}
-
-export interface ConnectionRegistry {
-    /**
-     * Returns if the registry active
-     * @return Return true if the registry is active, false otherwise
-     */
-    isActive(): boolean;
-
-    /**
-     * Returns connection by UUID
-     * @param uuid UUID that identifies the connection
-     * @return Connection if there is a connection with the UUID, undefined otherwise
-     */
-    getConnection(uuid: UUID): Connection | undefined;
-
-    /**
-     * Returns all active connections in the registry
-     * @return Array of Connection objects
-     */
-    getConnections(): Connection[];
-
-    /**
-     * Returns a random connection from active connections
-     * @return Connection if there is at least one connection, otherwise null
-     */
-    getRandomConnection(): Connection | null;
-
-    /**
-     * Returns if invocation allowed. Invocation is allowed only if connection state is {@link INITIALIZED_ON_CLUSTER}
-     * and there is at least one active connection.
-     * @return Error if invocation is not allowed, null otherwise
-     */
-    checkIfInvocationAllowed(): Error | null;
-}
-
-export class ConnectionRegistryImpl implements ConnectionRegistry {
-
-    private active = false;
-    private readonly activeConnections = new Map<string, Connection>();
-    private readonly loadBalancer: LoadBalancer;
-    private connectionState = ConnectionState.INITIAL;
-    private readonly smartRoutingEnabled: boolean;
-    private readonly asyncStart: boolean;
-    private readonly reconnectMode: ReconnectMode;
-
-    constructor(
-        connectionStrategy: ConnectionStrategyConfig,
-        smartRoutingEnabled: boolean,
-        loadBalancer: LoadBalancer
-    ) {
-        this.smartRoutingEnabled = smartRoutingEnabled;
-        this.asyncStart = connectionStrategy.asyncStart;
-        this.reconnectMode = connectionStrategy.reconnectMode;
-        this.loadBalancer = loadBalancer;
-    }
-
-    isActive(): boolean {
-        return this.active;
-    }
-
-    getConnectionState(): ConnectionState {
-        return this.connectionState;
-    }
-
-    isEmpty(): boolean {
-        return this.activeConnections.size === 0;
-    }
-
-    /**
-     * Returns all active connections in the registry
-     * @return Array of Connection objects
-     */
-    getConnections(): Connection[] {
-        return Array.from(this.activeConnections.values());
-    }
-
-    /**
-     * Returns connection by UUID
-     * @param uuid UUID that identifies the connection
-     * @return Connection if there is a connection with the UUID, undefined otherwise
-     */
-    getConnection(uuid: UUID): Connection | undefined {
-        return this.activeConnections.get(uuid.toString());
-    }
-
-    /**
-     * Returns a random connection from active connections. If smart routing enabled, connection is returned using
-     * load balancer. Otherwise, it is the first connection in connection registry.
-     * @return Connection if there is at least one connection, otherwise null
-     */
-    getRandomConnection(): Connection | null {
-        if (this.smartRoutingEnabled) {
-            const member = this.loadBalancer.next();
-            if (member != null) {
-                const connection = this.getConnection(member.uuid);
-                if (connection != null) {
-                    return connection;
-                }
-            }
-        }
-
-        const iterator = this.activeConnections.values();
-        const next = iterator.next();
-        if (!next.done) {
-            return next.value;
-        } else {
-            return null;
-        }
-    }
-
-    forEachConnection(fn: (conn: Connection) => void): void {
-        this.activeConnections.forEach(fn);
-    }
-
-    /**
-     * Returns if invocation allowed. Invocation is allowed only if connection state is {@link INITIALIZED_ON_CLUSTER}
-     * and there is at least one active connection.
-     * @return An error if invocation is not allowed, null if it is allowed
-     */
-    checkIfInvocationAllowed(): Error | null {
-        const state = this.connectionState;
-        if (state === ConnectionState.INITIALIZED_ON_CLUSTER && this.activeConnections.size > 0) {
-            return null;
-        }
-
-        let error: Error;
-        if (state === ConnectionState.INITIAL) {
-            if (this.asyncStart) {
-                error = new ClientOfflineError();
-            } else {
-                error = new IOError('No connection found to cluster since the client is starting.');
-            }
-        } else if (this.reconnectMode === ReconnectMode.ASYNC) {
-            error = new ClientOfflineError();
-        } else {
-            error = new IOError('No connection found to cluster.');
-        }
-        return error;
-    }
-
-    deleteConnection(uuid: UUID): void {
-        this.activeConnections.delete(uuid.toString());
-    }
-
-    /**
-     * Adds or updates a client connection by uuid
-     * @param uuid UUID to identify the connection
-     * @param connection to set
-     */
-    setConnection(uuid: UUID, connection: Connection): void {
-        this.activeConnections.set(uuid.toString(), connection);
-    }
-
-    setConnectionState(connectionState: ConnectionState): void {
-        this.connectionState = connectionState;
-    }
-
-    activate(): void {
-        this.active = true;
-    }
-
-    deactivate(): void {
-        this.active = false;
-    }
 }
 
 interface ClientForConnectionManager {
@@ -283,11 +121,12 @@ interface ClientForConnectionManager {
 }
 
 /**
- * Maintains connections between the client and members of the cluster.
+ * Maintains connections between the client and the members.
  * @internal
  */
 export class ConnectionManager extends EventEmitter {
 
+    private active = false;
     private connectionIdCounter = 0;
     private readonly labels: string[];
     private readonly shuffleMemberList: boolean;
@@ -306,6 +145,16 @@ export class ConnectionManager extends EventEmitter {
     private reconnectToMembersTask: Task;
     // contains member UUIDs (strings) for members with in-flight connection attempt
     private readonly connectingMembers = new Set<string>();
+    /**
+     * The number of bytes received over all connections (active and closed). Guaranteed to be monotonically increasing
+     * counter, but may not show the latest total.
+     */
+    private totalBytesRead : number;
+    /**
+     * The number of bytes sent over all connections (active and closed). Guaranteed to be monotonically increasing
+     * counter, but may not show the latest total.
+     */
+    private totalBytesWritten : number;
 
     constructor(
         private readonly client: ClientForConnectionManager,
@@ -327,7 +176,7 @@ export class ConnectionManager extends EventEmitter {
         this.heartbeatManager = new HeartbeatManager(
             this.clientConfig.properties,
             this.logger,
-            this.connectionRegistry
+            this
         );
         this.authenticationTimeout = this.heartbeatManager.getHeartbeatTimeout();
         this.shuffleMemberList = this.clientConfig.properties['hazelcast.client.shuffle.member.list'] as boolean;
@@ -336,13 +185,23 @@ export class ConnectionManager extends EventEmitter {
         const connectionStrategyConfig = this.clientConfig.connectionStrategy;
         this.asyncStart = connectionStrategyConfig.asyncStart;
         this.reconnectMode = connectionStrategyConfig.reconnectMode;
+        this.totalBytesWritten = 0;
+        this.totalBytesRead = 0;
+    }
+
+    isActive() : boolean {
+        return this.active;
+    }
+
+    getConnectionRegistry(): ConnectionRegistry {
+        return this.connectionRegistry;
     }
 
     start(): Promise<void> {
-        if (this.connectionRegistry.isActive()) {
+        if (this.active) {
             return Promise.resolve();
         }
-        this.connectionRegistry.activate();
+        this.active = true;
 
         this.heartbeatManager.start(this.invocationService);
         return this.connectToCluster();
@@ -361,11 +220,11 @@ export class ConnectionManager extends EventEmitter {
     }
 
     shutdown(): void {
-        if (!this.connectionRegistry.isActive()) {
+        if (!this.active) {
             return;
         }
 
-        this.connectionRegistry.deactivate();
+        this.active = false;
         if (this.reconnectToMembersTask !== undefined) {
             cancelRepetitionTask(this.reconnectToMembersTask);
         }
@@ -452,11 +311,18 @@ export class ConnectionManager extends EventEmitter {
                     translatedAddress,
                     socket,
                     this.connectionIdCounter++,
-                    this.lifecycleService
+                    this.lifecycleService,
+                    numberOfBytes => {this.totalBytesRead += numberOfBytes},
+                    numberOfBytes => {this.totalBytesWritten += numberOfBytes}
                 );
                 // close the connection proactively on errors
                 socket.once('error', (err: NodeJS.ErrnoException) => {
-                    connection.close('Socket error. Connection might be closed by other side', err);
+                    connection.close('Socket error.', err);
+                });
+                // close the connection if socket is not readable anymore
+                socket.once('end', () => {
+                    const reason = 'Connection closed by the other side.';
+                    connection.close(reason, new IOError(reason));
                 });
                 return this.initiateCommunication(socket);
             })
@@ -492,7 +358,7 @@ export class ConnectionManager extends EventEmitter {
             this.logger.info('ConnectionManager', 'Removed connection to endpoint: '
                 + endpoint + ':' + memberUuid + ', connection: ' + connection);
             if (this.connectionRegistry.isEmpty()) {
-                if (this.connectionRegistry.getConnectionState() === ConnectionState.INITIALIZED_ON_CLUSTER) {
+                if (this.connectionRegistry.getClientState() === ClientState.INITIALIZED_ON_CLUSTER) {
                     this.emitLifecycleEvent(LifecycleState.DISCONNECTED);
                 }
                 this.triggerClusterReconnection();
@@ -643,7 +509,7 @@ export class ConnectionManager extends EventEmitter {
                         }
                         this.logger.info('ConnectionManager', 'Unable to connect to any address '
                             + 'from the cluster with name: ' + ctx.clusterName
-                            + '. The following addresses were tried: ' + triedAddresses);
+                            + '. The following addresses were tried: ' + Array.from(triedAddresses).join(', '));
                         return false;
                     });
             })
@@ -968,10 +834,10 @@ export class ConnectionManager extends EventEmitter {
         if (connectionsEmpty) {
             this.clusterId = newClusterId;
             if (clusterIdChanged) {
-                this.connectionRegistry.setConnectionState(ConnectionState.CONNECTED_TO_CLUSTER);
+                this.connectionRegistry.setClientState(ClientState.CONNECTED_TO_CLUSTER);
                 this.initializeClientOnCluster(newClusterId);
             } else {
-                this.connectionRegistry.setConnectionState(ConnectionState.INITIALIZED_ON_CLUSTER);
+                this.connectionRegistry.setClientState(ClientState.INITIALIZED_ON_CLUSTER);
                 this.emitLifecycleEvent(LifecycleState.CONNECTED);
             }
         }
@@ -1013,20 +879,45 @@ export class ConnectionManager extends EventEmitter {
         const ctx = this.clusterFailoverService.current();
         const clusterName = ctx.clusterName;
         const customCredentials = ctx.customCredentials;
+        const securityConfig = ctx.securityConfig;
         const clientVersion = BuildInfo.getClientVersion();
 
         let clientMessage: ClientMessage;
-        if (customCredentials != null) {
-            const credentialsPayload = this.serializationService.toData(customCredentials).toBuffer();
+
+        if (customCredentials != null || securityConfig.token != null || securityConfig.custom != null) {
+            // User either provided a customCredentials or explicitly configured
+            // a token or custom credentials with the security element.
+            const credentialsPayload = this.getCredentialsPayload(customCredentials, securityConfig);
 
             clientMessage = ClientAuthenticationCustomCodec.encodeRequest(clusterName, credentialsPayload, this.clientUuid,
                 CLIENT_TYPE, SERIALIZATION_VERSION, clientVersion, this.clientName, this.labels);
         } else {
-            clientMessage = ClientAuthenticationCodec.encodeRequest(clusterName, null, null, this.clientUuid,
-                CLIENT_TYPE, SERIALIZATION_VERSION, clientVersion, this.clientName, this.labels);
+            const usernamePasswordCredentials = securityConfig.usernamePassword;
+            clientMessage = ClientAuthenticationCodec.encodeRequest(clusterName, usernamePasswordCredentials.username,
+                usernamePasswordCredentials.password, this.clientUuid, CLIENT_TYPE, SERIALIZATION_VERSION, clientVersion,
+                this.clientName, this.labels);
         }
 
         return clientMessage;
+    }
+
+    private getCredentialsPayload(customCredentials: any, securityConfig: SecurityConfigImpl): Buffer {
+        let payload: Buffer;
+        const tokenCredentials = securityConfig.token;
+        if (tokenCredentials != null) {
+            const token = tokenCredentials.token;
+            const encoding = tokenCredentials.encoding;
+            payload = Buffer.from(token, encoding);
+        } else {
+            // If we are this far, we ruled out the possibility of credentials being
+            // UsernamePasswordCredentials or TokenCredentials. So, it has to
+            // be either a customCredentials(deprecated configuration element)
+            // or a user specified custom credentials object with the new security
+            // configuration.
+            payload = this.serializationService.toData(customCredentials || securityConfig.custom).toBuffer();
+        }
+
+        return payload;
     }
 
     private checkPartitionCount(newPartitionCount: number): void {
@@ -1051,10 +942,10 @@ export class ConnectionManager extends EventEmitter {
                     this.logger.trace('ConnectionManager', 'Client state is sent to cluster: '
                         + targetClusterId);
 
-                    this.connectionRegistry.setConnectionState(ConnectionState.INITIALIZED_ON_CLUSTER);
+                    this.connectionRegistry.setClientState(ClientState.INITIALIZED_ON_CLUSTER);
                     this.emitLifecycleEvent(LifecycleState.CONNECTED);
                 } else {
-                    this.logger.warn('ConnectionManager', 'Cannot set connection state to initialized on '
+                    this.logger.warn('ConnectionManager', 'Cannot set client state to initialized on '
                         + 'cluster because current cluster id: ' + this.clusterId
                         + ' is different than expected cluster id: ' + targetClusterId);
                 }
@@ -1081,5 +972,14 @@ export class ConnectionManager extends EventEmitter {
         }
         return Promise.all(promises)
             .then(() => undefined);
+    }
+
+    getTotalBytesWritten(): number {
+        return this.totalBytesWritten;
+    }
+
+
+    getTotalBytesRead(): number {
+        return this.totalBytesRead;
     }
 }

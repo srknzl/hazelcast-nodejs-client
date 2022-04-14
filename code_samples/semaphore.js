@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,24 @@
 const { Client } = require('hazelcast-client');
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient();
+    const client = await Client.newHazelcastClient();
 
-        const semaphore = await client.getCPSubsystem().getSemaphore('my-semaphore');
-        const initialized = await semaphore.init(3);
-        console.log('Initialized:', initialized);
-        let available = await semaphore.availablePermits();
-        console.log('Available:', available);
+    const semaphore = await client.getCPSubsystem().getSemaphore('my-semaphore');
+    const initialized = await semaphore.init(3);
+    console.log('Initialized:', initialized);
+    let available = await semaphore.availablePermits();
+    console.log('Available:', available);
 
-        await semaphore.acquire(3);
-        available = await semaphore.availablePermits();
-        console.log('Available after acquire:', available);
+    await semaphore.acquire(3);
+    available = await semaphore.availablePermits();
+    console.log('Available after acquire:', available);
 
-        await semaphore.release(2);
-        available = await semaphore.availablePermits();
-        console.log('Available after release:', available);
+    await semaphore.release(2);
+    available = await semaphore.availablePermits();
+    console.log('Available after release:', available);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ const { HazelcastCloudAddressProvider } = require('../../../lib/discovery/Hazelc
 const { HazelcastCloudDiscovery } = require('../../../lib/discovery/HazelcastCloudDiscovery');
 
 describe('HazelcastCloudProviderTest', function () {
-
     const expectedAddresses = new Map();
     let hazelcastCloudDiscovery;
     let provider;
@@ -97,10 +96,9 @@ describe('HazelcastCloudProviderTest', function () {
 
     it('refresh_whenException_thenLogWarning', async function () {
         HazelcastCloudDiscovery.prototype.discoverNodes.restore();
-        sandbox.stub(HazelcastCloudDiscovery.prototype, 'discoverNodes').callsFake(function () {
+        sandbox.stub(HazelcastCloudDiscovery.prototype, 'discoverNodes').callsFake(() => {
             return Promise.reject(new IllegalStateError('Expected exception'));
         });
         return provider.refresh();
     });
-
 });

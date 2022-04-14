@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,14 +20,13 @@ const path = require('path');
 const { HazelcastError, BasicSSLOptionsFactory } = require('../../../');
 
 describe('BasicSSLOptionsFactoryTest', function () {
-
     it('factory creates sslOptions object with all supported fields', async function () {
         const options = {
             servername: 'foo.bar.com',
             rejectUnauthorized: true,
-            caPath: path.join(__dirname, '../../integration/ssl/server1-cert.pem'),
-            keyPath: path.join(__dirname, '../../integration/ssl/client1-key.pem'),
-            certPath: path.join(__dirname, '../../integration/ssl/client1-cert.pem'),
+            caPath: path.join(__dirname, '../../integration/backward_compatible/parallel/ssl/server1-cert.pem'),
+            keyPath: path.join(__dirname, '../../integration/backward_compatible/parallel/ssl/client1-key.pem'),
+            certPath: path.join(__dirname, '../../integration/backward_compatible/parallel/ssl/client1-cert.pem'),
             ciphers: 'cipherliststring'
         };
         const factory = new BasicSSLOptionsFactory();

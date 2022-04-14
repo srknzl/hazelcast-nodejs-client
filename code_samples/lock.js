@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,29 +18,28 @@
 const { Client } = require('hazelcast-client');
 
 (async () => {
+    const client = await Client.newHazelcastClient();
+
+    const lock = await client.getCPSubsystem().getLock('my-lock');
+    let locked = await lock.isLocked();
+    console.log('Locked initially:', locked);
+
+    const fence = await lock.lock();
+    console.log('Fence token:', fence);
     try {
-        const client = await Client.newHazelcastClient();
-
-        const lock = await client.getCPSubsystem().getLock('my-lock');
-        let locked = await lock.isLocked();
-        console.log('Locked initially:', locked);
-
-        const fence = await lock.lock();
-        console.log('Fence token:', fence);
-        try {
-            locked = await lock.isLocked();
-            console.log('Locked after lock:', locked);
-
-            // more guarded code goes here
-        } finally {
-            await lock.unlock(fence);
-        }
-
         locked = await lock.isLocked();
-        console.log('Locked after unlock:', locked);
+        console.log('Locked after lock:', locked);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
+        // more guarded code goes here
+    } finally {
+        await lock.unlock(fence);
     }
-})();
+
+    locked = await lock.isLocked();
+    console.log('Locked after unlock:', locked);
+
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

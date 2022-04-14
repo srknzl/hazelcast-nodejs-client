@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,9 @@ import {
 
 /**
  * A specialized map whose values locally stored on every node of the cluster.
+ *
+ * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
+ * serializer for a certain type.
  */
 export interface ReplicatedMap<K, V> extends DistributedObject {
 
@@ -36,6 +39,7 @@ export interface ReplicatedMap<K, V> extends DistributedObject {
      * @param key the key of the map entry
      * @param value new value
      * @param ttl optional time to live in milliseconds. `0` means infinite.
+     * @throws AssertionError if `key` or `value` is `null`
      * @returns old value if there was any, `null` otherwise
      */
     put(key: K, value: V, ttl?: number | Long): Promise<V>;
@@ -57,6 +61,7 @@ export interface ReplicatedMap<K, V> extends DistributedObject {
      * idempotent.
      *
      * @param key the key of the map entry
+     * @throws AssertionError if `key` is `null`
      * @returns value associated with the specified key
      */
     get(key: K): Promise<V>;
@@ -66,6 +71,7 @@ export interface ReplicatedMap<K, V> extends DistributedObject {
      * message is idempotent.
      *
      * @param key the key to search for
+     * @throws AssertionError if `key` is `null`
      * @returns `true` if this map contains the specified key, `false` otherwise
      */
     containsKey(key: K): Promise<boolean>;
@@ -74,6 +80,7 @@ export interface ReplicatedMap<K, V> extends DistributedObject {
      * Returns `true` if this map maps one or more keys to the specified value.
      *
      * @param value the value to search for
+     * @throws AssertionError if `key` is `null`
      * @returns `true` if the specified value is associated with at least one key
      */
     containsValue(value: V): Promise<boolean>;
@@ -96,6 +103,7 @@ export interface ReplicatedMap<K, V> extends DistributedObject {
      * Removes the mapping for a key from this map if it is present.
      *
      * @param key the key of the map entry
+     * @throws AssertionError if `key` is `null`
      * @returns value associated with key, `null` if the key did not exist before
      */
     remove(key: K): Promise<V>;

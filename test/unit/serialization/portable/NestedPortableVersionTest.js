@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ const { Parent, Child } = require('../PortableObjects');
 const TestUtil = require('../../../TestUtil');
 
 describe('NestedPortableVersionTest', function () {
-
     it('compatible versions', function () {
         const sc = new SerializationConfigImpl();
         sc.portableVersion = 6;

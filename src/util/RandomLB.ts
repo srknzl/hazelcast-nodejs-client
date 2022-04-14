@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,24 @@ import {randomInt} from '../util/Util';
  * @internal
  */
 export class RandomLB extends AbstractLoadBalancer {
-    next(): Member {
-        const members = this.getMembers();
+    next(): Member | null {
+        return this._next(false);
+    }
+
+    private _next(dataMember: boolean): Member | null {
+        const members = dataMember ? this.getDataMembers() : this.getMembers();
         if (members == null || members.length === 0) {
             return null;
         }
         const index = randomInt(members.length);
         return members[index];
+    }
+
+    canGetNextDataMember(): boolean {
+        return true;
+    }
+
+    nextDataMember(): Member | null {
+        return this._next(true);
     }
 }

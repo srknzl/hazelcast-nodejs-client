@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ const {
 const { CodecUtil } = require('../../../lib/codec/builtin/CodecUtil');
 
 describe('ClientMessageTest', function () {
-
     const IS_FINAL_FLAG = 1 << 13;
     const INT_SIZE_IN_BYTES = 4;
 

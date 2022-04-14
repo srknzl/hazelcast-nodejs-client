@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,12 @@ class Comparator {
     // This comparator sorts entries according to their keys
     // in reverse alphabetical order.
     sort(a, b) {
-        if (a[0] > b[0]) return -1;
-        if (a[0] < b[0]) return 1;
+        if (a[0] > b[0]) {
+            return -1;
+        }
+        if (a[0] < b[0]) {
+            return 1;
+        }
         return 0;
     }
 
@@ -49,8 +53,7 @@ class Comparator {
 }
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient({
+    const client = await Client.newHazelcastClient({
             serialization: {
                 // We register our comparator object as IdentifiedDataSerializable
                 dataSerializableFactories: {
@@ -62,36 +65,37 @@ class Comparator {
                     }
                 }
             }
-        });
+    });
 
-        const map = await client.getMap('test');
-        await map.putAll([
+    const map = await client.getMap('test');
+
+    await map.putAll([
             ['a', 1], ['b', 2], ['c', 3], ['d', 4],
             ['e', 5], ['f', 6], ['g', 7]
-        ]);
-        const mapSize = await map.size();
-        console.log(`Added ${mapSize} elements`);
+    ]);
+    const mapSize = await map.size();
+    console.log(`Added ${mapSize} elements`);
 
-        const predicate = Predicates.paging(Predicates.alwaysTrue(), 2, new Comparator());
+    const predicate = Predicates.paging(Predicates.alwaysTrue(), 2, new Comparator());
 
-        predicate.setPage(0);
-        let values = await map.valuesWithPredicate(predicate);
-        console.log('Page 0:', values);
+    predicate.setPage(0);
+    let values = await map.valuesWithPredicate(predicate);
+    console.log('Page 0:', values);
 
-        predicate.setPage(1);
-        values = await map.valuesWithPredicate(predicate);
-        console.log('Page 1:', values);
+    predicate.setPage(1);
+    values = await map.valuesWithPredicate(predicate);
+    console.log('Page 1:', values);
 
-        predicate.setPage(2);
-        values = await map.valuesWithPredicate(predicate);
-        console.log('Page 2:', values);
+    predicate.setPage(2);
+    values = await map.valuesWithPredicate(predicate);
+    console.log('Page 2:', values);
 
-        predicate.setPage(3);
-        values = await map.valuesWithPredicate(predicate);
-        console.log('Page 3:', values);
+    predicate.setPage(3);
+    values = await map.valuesWithPredicate(predicate);
+    console.log('Page 3:', values);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

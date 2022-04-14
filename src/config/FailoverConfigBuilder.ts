@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,6 +65,8 @@ export class FailoverConfigBuilder {
                     const config = builder.build();
                     this.effectiveConfig.clientConfigs.push(config);
                 }
+            } else {
+                throw new RangeError(`Unexpected config key '${key}' is passed to the Hazelcast Failover Client`);
             }
         }
     }
@@ -80,20 +82,20 @@ export class FailoverConfigBuilder {
 
     private validateAlternativeConfigs(main: ClientConfigImpl,
                                        alternative: ClientConfigImpl): void {
-        const mainCopy = this.copyWithoutAllowedFields(main);
-        const alternativeCopy = this.copyWithoutAllowedFields(alternative);
+        const mainCopy = FailoverConfigBuilder.copyWithoutAllowedFields(main);
+        const alternativeCopy = FailoverConfigBuilder.copyWithoutAllowedFields(alternative);
 
         assert(
             util.isDeepStrictEqual(mainCopy, alternativeCopy),
             'Alternative config with cluster name ' + alternative.clusterName
                 + ' must have the same config as the initial config with cluster name '
                 + main.clusterName + ' except for the following options: '
-                + 'clusterName, customCredentials, network.clusterMembers, '
+                + 'clusterName, customCredentials, security, network.clusterMembers, '
                 + 'network.ssl, network.hazelcastCloud'
         );
     }
 
-    private copyWithoutAllowedFields(config: ClientConfigImpl): Record<string, unknown> {
+    private static copyWithoutAllowedFields(config: ClientConfigImpl): Record<string, unknown> {
         // make a shallow copy of the config
         const copy = {
             ...config
@@ -107,6 +109,7 @@ export class FailoverConfigBuilder {
         //       when this list changes
         delete copy.clusterName;
         delete copy.customCredentials;
+        delete copy.security;
         delete copy.network.clusterMembers;
         delete copy.network.ssl;
         delete copy.network.hazelcastCloud;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,6 +55,22 @@ export class ListMultiFrameCodec {
         clientMessage.nextFrame();
         while (!CodecUtil.nextFrameIsDataStructureEndFrame(clientMessage)) {
             result.push(decoder(clientMessage));
+        }
+        // end frame
+        clientMessage.nextFrame();
+        return result;
+    }
+
+    static decodeNullable<T>(clientMessage: ClientMessage, decoder: (msg: ClientMessage) => T): T[] {
+        return CodecUtil.nextFrameIsNullFrame(clientMessage) ? null : ListMultiFrameCodec.decode(clientMessage, decoder);
+    }
+
+    static decodeContainsNullable<T>(clientMessage: ClientMessage, decoder: (msg: ClientMessage) => T): T[] {
+        const result: T[] = [];
+        // begin frame
+        clientMessage.nextFrame();
+        while (!CodecUtil.nextFrameIsDataStructureEndFrame(clientMessage)) {
+            result.push(CodecUtil.nextFrameIsNullFrame(clientMessage) ? null : decoder(clientMessage));
         }
         // end frame
         clientMessage.nextFrame();

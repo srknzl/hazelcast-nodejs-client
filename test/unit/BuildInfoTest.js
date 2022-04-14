@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,5 +40,6 @@ describe('BuildInfo', function () {
         assert.equal(19930, BuildInfo.calculateServerVersionFromString('1.99.30'));
         assert.equal(109930, BuildInfo.calculateServerVersionFromString('10.99.30-SNAPSHOT'));
         assert.equal(109900, BuildInfo.calculateServerVersionFromString('10.99-RC1'));
+        assert.equal(50100, BuildInfo.calculateServerVersionFromString('5.1-BETA-1-SNAPSHOT'));
     });
 });

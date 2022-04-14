@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,24 @@
 const { Client } = require('hazelcast-client');
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient();
-        const map = await client.getMap('my-distributed-map');
+    const client = await Client.newHazelcastClient();
+    const map = await client.getMap('my-distributed-map');
 
-        await map.put('key', 'value');
-        const value = await map.get('key');
-        console.log('Plain value:', value);
-        await map.remove('key');
+    await map.put('key', 'value');
+    const value = await map.get('key');
+    console.log('Plain value:', value);
+    await map.remove('key');
 
-        await map.put('disappearing-key', 'this string will disappear after TTL', 1000);
-        let disappearingValue = await map.get('disappearing-key');
-        console.log('Disappearing value:', disappearingValue);
+    await map.put('disappearing-key', 'this string will disappear after TTL', 1000);
+    let disappearingValue = await map.get('disappearing-key');
+    console.log('Disappearing value:', disappearingValue);
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        disappearingValue = await map.get('disappearing-key');
-        console.log('Disappeared value:', disappearingValue);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+    disappearingValue = await map.get('disappearing-key');
+    console.log('Disappeared value:', disappearingValue);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

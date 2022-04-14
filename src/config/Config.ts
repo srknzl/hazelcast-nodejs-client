@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,10 +23,12 @@ import {NearCacheConfig, NearCacheConfigImpl} from './NearCacheConfig';
 import {Properties} from './Properties';
 import {ReliableTopicConfig, ReliableTopicConfigImpl} from './ReliableTopicConfig';
 import {SerializationConfig, SerializationConfigImpl} from './SerializationConfig';
-import {Statistics} from '../statistics/Statistics';
 import {ILogger} from '../logging/ILogger';
 import {ConnectionStrategyConfig, ConnectionStrategyConfigImpl} from './ConnectionStrategyConfig';
 import {LoadBalancerConfig, LoadBalancerConfigImpl} from './LoadBalancerConfig';
+import {MetricsConfig, MetricsConfigImpl} from './MetricsConfig';
+import {SecurityConfig, SecurityConfigImpl} from './SecurityConfig';
+import {Statistics} from '../statistics/Statistics';
 
 /**
  * Top level configuration object of Hazelcast client.
@@ -134,6 +136,8 @@ export interface ClientConfig {
     /**
      * Custom credentials to be used as a part of authentication on
      * the cluster.
+     *
+     * @deprecated Since version 5.1. Use {@link security} element instead.
      */
     customCredentials?: any;
 
@@ -152,35 +156,57 @@ export interface ClientConfig {
      */
     properties?: Properties;
 
+    /**
+     * Metrics config. Using this config, you can enable client metrics collection and change the frequency of sending client
+     * metrics to the cluster. You can monitor clients using Hazelcast Management Center once the metrics collection is enabled.
+     */
+    metrics?: MetricsConfig;
+    /**
+     * Contains configuration for the client to use different kinds
+     * of credential types during authentication, such as username/password,
+     * token, or custom credentials.
+     */
+    security?: SecurityConfig;
+
 }
+
+/**
+ * If you are adding a new property, don't forget to add its validation in `handleProperties`.
+ * @internal
+ */
+const DEFAULT_PROPERTIES: Properties = {
+    'hazelcast.client.heartbeat.interval': 5000,
+    'hazelcast.client.heartbeat.timeout': 60000,
+    'hazelcast.client.invocation.retry.pause.millis': 1000,
+    'hazelcast.client.invocation.timeout.millis': 120000,
+    'hazelcast.client.internal.clean.resources.millis': 100,
+    'hazelcast.client.cloud.url': 'https://coordinator.hazelcast.cloud',
+    /**
+     * `hazelcast.client.statistics.enabled` and `hazelcast.client.period.seconds` are
+     * @deprecated since 5.1
+     *
+     * use `metrics` client config instead.
+     */
+    'hazelcast.client.statistics.enabled': false,
+    'hazelcast.client.statistics.period.seconds': Statistics.PERIOD_SECONDS_DEFAULT_VALUE,
+    'hazelcast.invalidation.reconciliation.interval.seconds': 60,
+    'hazelcast.invalidation.max.tolerated.miss.count': 10,
+    'hazelcast.invalidation.min.reconciliation.interval.seconds': 30,
+    'hazelcast.logging.level': 'INFO',
+    'hazelcast.client.autopipelining.enabled': true,
+    'hazelcast.client.autopipelining.threshold.bytes': 65536,
+    'hazelcast.client.socket.no.delay': true,
+    'hazelcast.client.shuffle.member.list': true,
+    'hazelcast.client.operation.backup.timeout.millis': 5000,
+    'hazelcast.client.operation.fail.on.indeterminate.state': false,
+    // `null` is set as the default value here to use this property
+    // as a tri-state boolean (see TranslateAddressProvider)
+    'hazelcast.discovery.public.ip.enabled': null,
+};
 
 /** @internal */
 export class ClientConfigImpl implements ClientConfig {
-
-    properties: Properties = {
-        'hazelcast.client.heartbeat.interval': 5000,
-        'hazelcast.client.heartbeat.timeout': 60000,
-        'hazelcast.client.invocation.retry.pause.millis': 1000,
-        'hazelcast.client.invocation.timeout.millis': 120000,
-        'hazelcast.client.internal.clean.resources.millis': 100,
-        'hazelcast.client.cloud.url': 'https://coordinator.hazelcast.cloud',
-        'hazelcast.client.statistics.enabled': false,
-        'hazelcast.client.statistics.period.seconds': Statistics.PERIOD_SECONDS_DEFAULT_VALUE,
-        'hazelcast.invalidation.reconciliation.interval.seconds': 60,
-        'hazelcast.invalidation.max.tolerated.miss.count': 10,
-        'hazelcast.invalidation.min.reconciliation.interval.seconds': 30,
-        'hazelcast.logging.level': 'INFO',
-        'hazelcast.client.autopipelining.enabled': true,
-        'hazelcast.client.autopipelining.threshold.bytes': 65536,
-        'hazelcast.client.socket.no.delay': true,
-        'hazelcast.client.shuffle.member.list': true,
-        'hazelcast.client.operation.backup.timeout.millis': 5000,
-        'hazelcast.client.operation.fail.on.indeterminate.state': false,
-        // `null` is set as the default value here to use this property
-        // as a tri-state boolean (see TranslateAddressProvider)
-        'hazelcast.discovery.public.ip.enabled': null,
-    };
-
+    properties: Properties = {...DEFAULT_PROPERTIES}; // Create a new object
     instanceName: string;
     network = new ClientNetworkConfigImpl();
     customLogger: ILogger = null;
@@ -196,6 +222,8 @@ export class ClientConfigImpl implements ClientConfig {
     clientLabels: string[] = [];
     loadBalancer = new LoadBalancerConfigImpl();
     backupAckToClientEnabled = true;
+    metrics = new MetricsConfigImpl();
+    security = new SecurityConfigImpl();
 
     private configPatternMatcher = new ConfigPatternMatcher();
 

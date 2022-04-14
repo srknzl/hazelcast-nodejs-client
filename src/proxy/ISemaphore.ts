@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -121,7 +121,7 @@ export interface ISemaphore extends DistributedObject {
      * by programming convention in the application.
      *
      * @param permits the number of permits to release
-     * @throws IllegalStateError if the Semaphore is non-JDK-compatible
+     * @throws {@link IllegalStateError} if the Semaphore is non-JDK-compatible
      *         and the caller does not have a permit
      */
     release(permits?: number): Promise<void>;

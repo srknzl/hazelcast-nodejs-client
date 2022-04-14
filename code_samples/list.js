@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,22 @@
 const { Client } = require('hazelcast-client');
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient();
+    const client = await Client.newHazelcastClient();
 
-        const list = await client.getList('people');
-        await list.add('John');
-        console.log('Added John');
-        await list.add('Jane', 1);
-        console.log('Added Jane to index 1');
-        await list.add('Thomas');
-        console.log('Added Thomas');
-        await list.remove('Jane');
-        console.log('Removed Jane');
-        const removedItem = await list.removeAt(1);
-        console.log('Removed', removedItem);
+    const list = await client.getList('people');
+    await list.add('John');
+    console.log('Added John');
+    await list.add('Jane', 1);
+    console.log('Added Jane to index 1');
+    await list.add('Thomas');
+    console.log('Added Thomas');
+    await list.remove('Jane');
+    console.log('Removed Jane');
+    const removedItem = await list.removeAt(1);
+    console.log('Removed', removedItem);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

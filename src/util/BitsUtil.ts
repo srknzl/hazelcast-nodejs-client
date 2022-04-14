@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,11 @@ export class BitsUtil {
     static readonly FLOAT_SIZE_IN_BYTES = 4;
     static readonly LONG_SIZE_IN_BYTES = 8;
     static readonly DOUBLE_SIZE_IN_BYTES = 8;
+    static readonly LOCAL_DATE_SIZE_IN_BYTES = BitsUtil.INT_SIZE_IN_BYTES + BitsUtil.BYTE_SIZE_IN_BYTES * 2;
+    static readonly LOCAL_TIME_SIZE_IN_BYTES = BitsUtil.INT_SIZE_IN_BYTES + BitsUtil.BYTE_SIZE_IN_BYTES * 3;
+    static readonly LOCAL_DATETIME_SIZE_IN_BYTES = BitsUtil.LOCAL_DATE_SIZE_IN_BYTES + BitsUtil.LOCAL_TIME_SIZE_IN_BYTES;
+    static readonly OFFSET_DATE_TIME_SIZE_IN_BYTES = BitsUtil.LOCAL_DATETIME_SIZE_IN_BYTES + BitsUtil.INT_SIZE_IN_BYTES;
+
     static readonly UUID_SIZE_IN_BYTES = BitsUtil.BOOLEAN_SIZE_IN_BYTES + 2 * BitsUtil.LONG_SIZE_IN_BYTES;
 
     static readonly NULL_ARRAY_LENGTH = -1;

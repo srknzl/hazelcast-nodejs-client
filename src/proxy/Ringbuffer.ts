@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,9 @@ import {OverflowPolicy} from './OverflowPolicy';
  * structure. A ringbuffer has a fixed capacity, so it won't grow beyond
  * that capacity and endanger the stability of the system. If that capacity
  * is exceeded, the oldest item in the ringbuffer is overwritten.
+ *
+ * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
+ * serializer for a certain type.
  */
 export interface Ringbuffer<E> extends DistributedObject {
 
@@ -126,7 +129,7 @@ export interface Ringbuffer<E> extends DistributedObject {
      *
      * @param sequence the sequence number of the item to read
      * @return the item that was read
-     * @throws `RangeError` if `sequence` is:
+     * @throws RangeError if `sequence` is:
      *                      smaller than `0`,
      *                      or smaller than `headSequence`,
      *                      or greater than `tailSequence + 1`
@@ -156,7 +159,7 @@ export interface Ringbuffer<E> extends DistributedObject {
      * @param startSequence sequence number of the first item to be read.
      * @param minCount minimum number of items to be read.
      * @param maxCount maximum number of items to be read.
-     * @throws `RangeError` if `startSequence` is smaller than `0`,
+     * @throws RangeError if `startSequence` is smaller than `0`,
      *                      or if `minCount` smaller than `0`,
      *                      or if `minCount` larger than `maxCount`,
      *                      or if `maxCount` larger than `1000` (to prevent overloading)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+/** @ignore *//** */
 
 import * as Long from 'long';
 import {
@@ -50,9 +51,10 @@ import {MapEvent, MapEventListener} from './MapListener';
 import {ClientMessage} from '../protocol/ClientMessage';
 import {deserializeEntryList} from '../serialization/SerializationUtil';
 
-type EntryEventHander = (key: Data, value: Data, oldValue: Data, mergingValue: Data,
-                         eventType: number, uuid: UUID, numberOfAffectedEntries: number) => void
+type EntryEventHandler = (key: Data, value: Data, oldValue: Data, mergingValue: Data,
+                          eventType: number, uuid: UUID, numberOfAffectedEntries: number) => void
 
+/** @internal */
 export class ReplicatedMapProxy<K, V> extends PartitionSpecificProxy implements ReplicatedMap<K, V> {
 
     put(key: K, value: V, ttl: Long | number = 0): Promise<V> {
@@ -188,7 +190,7 @@ export class ReplicatedMapProxy<K, V> extends PartitionSpecificProxy implements 
         const toObject = this.toObject.bind(this);
         const entryEventHandler = (key: Data, value: Data, oldValue: Data, mergingValue: Data,
                                    event: number, uuid: UUID, numberOfAffectedEntries: number): void => {
-            const member = this.clusterService.getMember(uuid);
+            const member = this.clusterService.getMember(uuid.toString());
             const name = this.name;
 
             const entryEvent = new EntryEvent<K,V>(
@@ -222,7 +224,7 @@ export class ReplicatedMapProxy<K, V> extends PartitionSpecificProxy implements 
             }
         };
         let listenerHandler: (message: ClientMessage,
-                              handler: EntryEventHander,
+                              handler: EntryEventHandler,
                               toObjectFn: (data: Data) => any) => void;
         let codec: ListenerMessageCodec;
         if (key && predicate) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ export const REST_VALUE_FACTORY_ID = -25;
 export const REST_VALUE_CLASS_ID = 1;
 
 /**
- * Wrapper for values stored via IMDG REST API.
+ * Wrapper for values stored via Hazelcast REST API.
  */
 export class RestValue implements IdentifiedDataSerializable {
 

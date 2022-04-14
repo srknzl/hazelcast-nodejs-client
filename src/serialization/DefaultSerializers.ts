@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 /** @ignore *//** */
 
 import * as Long from 'long';
-import {BitsUtil} from '../util/BitsUtil';
 import {DataInput, DataOutput} from './Data';
 import {
     Serializer,
@@ -24,9 +23,15 @@ import {
     IdentifiedDataSerializableFactory
 } from './Serializable';
 import {
+    BigDecimal,
     HazelcastJsonValue,
+    LocalDate,
+    LocalDateTime,
+    LocalTime,
+    OffsetDateTime,
     UUID
 } from '../core';
+import * as BigDecimalUtil from '../util/BigDecimalUtil';
 
 /** @internal */
 export class StringSerializer implements Serializer<string> {
@@ -78,11 +83,11 @@ export class NullSerializer implements Serializer<null> {
 
     id = NULL_TYPE_ID;
 
-    read(input: DataInput): null {
+    read(_input: DataInput): null {
         return null;
     }
 
-    write(output: DataOutput, object: any): void {
+    write(_output: DataOutput, _object: any): void {
         // no-op
     }
 }
@@ -153,7 +158,7 @@ export class DateSerializer implements Serializer<Date> {
     }
 
     write(output: DataOutput, object: Date): void {
-        output.writeLong(Long.fromNumber(object.getMilliseconds()));
+        output.writeLong(Long.fromNumber(object.getTime()));
     }
 }
 
@@ -279,7 +284,7 @@ export class CharSerializer implements Serializer<string> {
     }
 
     write(output: DataOutput, object: string): void {
-        output.writeChar(object);
+        // no-op
     }
 }
 
@@ -293,7 +298,7 @@ export class CharArraySerializer implements Serializer<string[]> {
     }
 
     write(output: DataOutput, object: string[]): void {
-        output.writeCharArray(object);
+        // no-op
     }
 }
 
@@ -321,36 +326,40 @@ export class JavaClassSerializer implements Serializer {
     }
 
     write(output: DataOutput, object: any): void {
-        output.writeString(object);
-    }
-}
-
-/** @internal */
-export class LinkedListSerializer implements Serializer<any[]> {
-
-    id = -30;
-
-    read(input: DataInput): any[] {
-        const size = input.readInt();
-        let result: any = null;
-        if (size > BitsUtil.NULL_ARRAY_LENGTH) {
-            result = [];
-            for (let i = 0; i < size; i++) {
-                result.push(input.readObject());
-            }
-        }
-        return result;
-    }
-
-    write(output: DataOutput, object: any[]): void {
         // no-op
     }
 }
 
 /** @internal */
-export class ArrayListSerializer extends LinkedListSerializer {
+export class JavaArraySerializer implements Serializer<any[]> {
+
+    id = -28;
+
+    read(input: DataInput): any[] {
+        const size = input.readInt();
+        const result = new Array<any>(size);
+        for (let i = 0; i < size; i++) {
+            result[i] = input.readObject();
+        }
+        return result;
+    }
+
+    write(_output: DataOutput, _object: any[]): void {
+        // no-op
+    }
+}
+
+
+/** @internal */
+export class ArrayListSerializer extends JavaArraySerializer {
 
     id = -29;
+}
+
+/** @internal */
+export class LinkedListSerializer extends JavaArraySerializer {
+
+    id = -30;
 }
 
 /** @internal */
@@ -426,5 +435,144 @@ export class UuidSerializer implements Serializer<UUID> {
     write(output: DataOutput, uuid: UUID): void {
         output.writeLong(uuid.mostSignificant);
         output.writeLong(uuid.leastSignificant);
+    }
+}
+
+/** @internal */
+export class LocalDateSerializer implements Serializer<LocalDate> {
+
+    id = -51;
+
+    read(input: DataInput): LocalDate {
+        const year = input.readInt();
+        const month = input.readByte();
+        const date = input.readByte();
+
+        return new LocalDate(year, month, date);
+    }
+
+    write(output: DataOutput, localDate: LocalDate): void {
+        output.writeInt(localDate.year);
+        output.writeByte(localDate.month);
+        output.writeByte(localDate.date);
+    }
+}
+
+/** @internal */
+export class LocalTimeSerializer implements Serializer<LocalTime> {
+
+    id = -52;
+
+    read(input: DataInput): LocalTime {
+        const hour = input.readByte();
+        const minute = input.readByte();
+        const second = input.readByte();
+        const nano = input.readInt();
+
+        return new LocalTime(hour, minute, second, nano);
+    }
+
+    write(output: DataOutput, localTime: LocalTime): void {
+        output.writeByte(localTime.hour);
+        output.writeByte(localTime.minute);
+        output.writeByte(localTime.second);
+        output.writeInt(localTime.nano);
+    }
+}
+
+/** @internal */
+export class LocalDateTimeSerializer implements Serializer<LocalDateTime> {
+
+    id = -53;
+
+    read(input: DataInput): LocalDateTime {
+        const year = input.readInt();
+        const month = input.readByte();
+        const date = input.readByte();
+
+        const hour = input.readByte();
+        const minute = input.readByte();
+        const second = input.readByte();
+        const nano = input.readInt();
+
+        return LocalDateTime.from(year, month, date, hour, minute, second, nano);
+    }
+
+    write(output: DataOutput, localDateTime: LocalDateTime): void {
+        output.writeInt(localDateTime.localDate.year);
+        output.writeByte(localDateTime.localDate.month);
+        output.writeByte(localDateTime.localDate.date);
+
+        output.writeByte(localDateTime.localTime.hour);
+        output.writeByte(localDateTime.localTime.minute);
+        output.writeByte(localDateTime.localTime.second);
+        output.writeInt(localDateTime.localTime.nano);
+    }
+}
+
+/** @internal */
+export class OffsetDateTimeSerializer implements Serializer<OffsetDateTime> {
+
+    id = -54;
+
+    read(input: DataInput): OffsetDateTime {
+        const year = input.readInt();
+        const month = input.readByte();
+        const date = input.readByte();
+
+        const hour = input.readByte();
+        const minute = input.readByte();
+        const second = input.readByte();
+        const nano = input.readInt();
+
+        const offsetSeconds = input.readInt();
+
+        return OffsetDateTime.from(year, month, date, hour, minute, second, nano, offsetSeconds);
+    }
+
+    write(output: DataOutput, offsetDateTime: OffsetDateTime): void {
+        output.writeInt(offsetDateTime.localDateTime.localDate.year);
+        output.writeByte(offsetDateTime.localDateTime.localDate.month);
+        output.writeByte(offsetDateTime.localDateTime.localDate.date);
+
+        output.writeByte(offsetDateTime.localDateTime.localTime.hour);
+        output.writeByte(offsetDateTime.localDateTime.localTime.minute);
+        output.writeByte(offsetDateTime.localDateTime.localTime.second);
+        output.writeInt(offsetDateTime.localDateTime.localTime.nano);
+
+        output.writeInt(offsetDateTime.offsetSeconds);
+    }
+}
+
+/** @internal */
+export class BigDecimalSerializer implements Serializer<BigDecimal> {
+
+    id = -27;
+
+    read(input: DataInput): BigDecimal {
+        const body = input.readByteArray();
+        const scale = input.readInt();
+
+        return new BigDecimal(BigDecimalUtil.bufferToBigInt(body), scale);
+    }
+
+    write(output: DataOutput, bigDecimal: BigDecimal): void {
+        output.writeByteArray(BigDecimalUtil.bigIntToBuffer(bigDecimal.unscaledValue));
+        output.writeInt(bigDecimal.scale);
+    }
+}
+
+/** @internal */
+export class BigIntSerializer implements Serializer<BigInt> {
+
+    id = -26;
+
+    read(input: DataInput): BigInt {
+        const body = input.readByteArray();
+        return BigDecimalUtil.bufferToBigInt(body);
+    }
+
+    write(output: DataOutput, bigint: BigInt): void {
+        output.writeByteArray(BigDecimalUtil.bigIntToBuffer(bigint));
     }
 }

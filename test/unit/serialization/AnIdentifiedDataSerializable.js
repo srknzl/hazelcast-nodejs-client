@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 'use strict';
 
 class AnIdentifiedDataSerializable {
-
     constructor(bool, b, c, d, s, f, i, l, str, booleans, bytes, chars,
                 doubles, shorts, floats, ints, longs, strings, portable,
                 identifiedDataSerializable, customStreamSerializable,
                 customByteArraySerializableObject, data) {
-        if (arguments.length === 0) return;
+        if (arguments.length === 0) {
+            return;
+        }
         this.bool = bool;
         this.b = b;
         this.c = c;
@@ -162,7 +163,6 @@ class AnIdentifiedDataSerializable {
 
         dataOutput.writeData(this.data);
     }
-
 }
 
 module.exports = AnIdentifiedDataSerializable;

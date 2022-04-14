@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,12 @@
 'use strict';
 
 const chai = require('chai');
-chai.should();
 chai.use(require('chai-as-promised'));
 const expect = chai.expect;
 const sinon = require('sinon');
 const sandbox = sinon.createSandbox();
 const Long = require('long');
 const {
-    Client,
     IllegalStateError,
     SessionExpiredError
 } = require('../../../../');
@@ -33,15 +31,15 @@ const {
 } = require('../../../../lib/proxy/cpsubsystem/CPSessionManager');
 const { DefaultLogger } = require('../../../../lib/logging/DefaultLogger');
 const { RaftGroupId } = require('../../../../lib/proxy/cpsubsystem/RaftGroupId');
+const { deferredPromise } = require('../../../../lib/util/Util');
+const { InvocationService } = require('../../../../lib/invocation/InvocationService');
 
 describe('CPSessionManagerTest', function () {
-
     afterEach(function () {
         sandbox.restore();
     });
 
     describe('SessionState', function () {
-
         it('acquire: should increment counter', function () {
             const state = new SessionState(Long.fromNumber(42), null, 1000);
 
@@ -73,11 +71,11 @@ describe('CPSessionManagerTest', function () {
         });
 
         it('isValid: should consider current acquire count', function () {
-            sandbox.useFakeTimers(0);
+            const clock = sandbox.useFakeTimers();
             const state = new SessionState(Long.fromNumber(42), null, 1000);
 
             // session should be expired now
-            sandbox.useFakeTimers(2000);
+            clock.tick(2000);
             expect(state.isValid()).to.be.false;
 
             state.acquire(1);
@@ -85,26 +83,24 @@ describe('CPSessionManagerTest', function () {
         });
 
         it('isValid: should consider current time', function () {
-            sandbox.useFakeTimers(0);
+            const clock = sandbox.useFakeTimers();
             const state = new SessionState(Long.fromNumber(42), null, 1000);
 
             expect(state.isValid()).to.be.true;
 
             // session should be expired now
-            sandbox.useFakeTimers(2000);
+            clock.tick(2000);
             expect(state.isValid()).to.be.false;
         });
     });
 
     describe('CPProxySessionManager', function () {
-
         const GROUP_ID = 42;
         const GROUP_ID_AS_STRING = prepareGroupId().getStringId();
         const SESSION_ID = 24;
         const TTL_MILLIS = 1000;
         const HEARTBEAT_MILLIS = 100;
 
-        let clientStub;
         let sessionManager;
 
         function prepareGroupId() {
@@ -115,13 +111,17 @@ describe('CPSessionManagerTest', function () {
             return new SessionState(Long.fromNumber(SESSION_ID), groupId, TTL_MILLIS);
         }
 
-        function stubRequestNewSession() {
-            const stub = sandbox.stub(sessionManager, 'requestNewSession');
-            stub.returns(Promise.resolve({
+        function prepareNewSessionResponse() {
+            return {
                 sessionId: Long.fromNumber(SESSION_ID),
                 ttlMillis: Long.fromNumber(TTL_MILLIS),
                 heartbeatMillis: Long.fromNumber(HEARTBEAT_MILLIS)
-            }));
+            };
+        }
+
+        function stubRequestNewSession() {
+            const stub = sandbox.stub(sessionManager, 'requestNewSession');
+            stub.returns(Promise.resolve(prepareNewSessionResponse()));
             return stub;
         }
 
@@ -132,10 +132,9 @@ describe('CPSessionManagerTest', function () {
         }
 
         beforeEach(function () {
-            clientStub = sandbox.stub(Client.prototype);
             const loggerStub = sandbox.stub(DefaultLogger.prototype);
-            clientStub.getLoggingService.returns({ getLogger: () => loggerStub });
-            sessionManager = new CPSessionManager(clientStub);
+            const invocationServiceStub = sandbox.stub(InvocationService.prototype);
+            sessionManager = new CPSessionManager(loggerStub, 'clientName', invocationServiceStub);
         });
 
         afterEach(async function () {
@@ -199,6 +198,53 @@ describe('CPSessionManagerTest', function () {
             expect(id.toNumber()).to.be.equal(SESSION_ID);
             expect(requestNewSessionStub.notCalled).to.be.true;
             expect(sessionManager.sessions.get(GROUP_ID_AS_STRING).acquireCount).to.be.equal(1);
+        });
+
+        it('acquireSession: should not request new session for the same group id for concurrent requests', async function () {
+            const stub = sandbox.stub(sessionManager, 'requestNewSession');
+            const deferred = deferredPromise();
+            stub.returns(deferred.promise);
+
+            const groupId = prepareGroupId();
+
+            const acquireSessionPromises = [
+                sessionManager.acquireSession(groupId),
+                sessionManager.acquireSession(groupId),
+                sessionManager.acquireSession(groupId),
+            ];
+
+            expect(sessionManager.inFlightCreateSessionRequests.size).to.be.equal(1);
+
+            deferred.resolve(prepareNewSessionResponse());
+
+            await Promise.all(acquireSessionPromises);
+            expect(stub.withArgs(groupId).calledOnce).to.be.true;
+            expect(sessionManager.inFlightCreateSessionRequests.size).to.be.equal(0);
+        });
+
+        it('acquireSession: should request new sessions for concurrent requests when requests fail', async function () {
+            const stub = sandbox.stub(sessionManager, 'requestNewSession');
+            const deferred = deferredPromise();
+            stub.returns(deferred.promise);
+
+            const groupId = prepareGroupId();
+
+            const acquireSessionPromises = [
+                sessionManager.acquireSession(groupId),
+                sessionManager.acquireSession(groupId),
+                sessionManager.acquireSession(groupId),
+            ];
+
+            expect(sessionManager.inFlightCreateSessionRequests.size).to.be.equal(1);
+
+            deferred.resolve(Promise.reject(new Error('expected')));
+
+            for (const acquireSessionPromise of acquireSessionPromises) {
+                await expect(acquireSessionPromise).to.be.rejectedWith(Error, 'expected');
+            }
+
+            expect(stub.withArgs(groupId).callCount).to.be.equal(acquireSessionPromises.length);
+            expect(sessionManager.inFlightCreateSessionRequests.size).to.be.equal(0);
         });
 
         it('releaseSession: should decrement acquire counter by 1 for known session', function () {
@@ -308,7 +354,7 @@ describe('CPSessionManagerTest', function () {
         it('heartbeatTask: should invalidate sessions when error received', function (done) {
             stubRequestNewSession();
 
-            sandbox.replace(sessionManager, 'requestHeartbeat', function () {
+            sandbox.replace(sessionManager, 'requestHeartbeat', () => {
                 return Promise.reject(new SessionExpiredError());
             });
 

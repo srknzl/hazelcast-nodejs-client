@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ export interface ReadResultSet<T> {
      * this result set.
      *
      * Usually this sequence is equal to the sequence used to retrieve this
-     * result set incremented by the {@link getReadCount()}. In cases when the
+     * result set incremented by the {@link getReadCount}. In cases when the
      * reader tolerates lost items, this is not the case.
      *
      * For instance, if the reader requests an item with a stale sequence (one

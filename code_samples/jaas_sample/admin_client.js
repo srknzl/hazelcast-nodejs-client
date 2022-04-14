@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,28 +20,27 @@ const { UsernamePasswordCredentials } = require('./user_pass_cred');
 const { usernamePasswordCredentialsFactory } = require('./user_pass_cred_factory');
 
 (async () => {
-    try {
-        const adminClient = await Client.newHazelcastClient({
+    const adminClient = await Client.newHazelcastClient({
             serialization: {
                 portableFactories: {
                     1: usernamePasswordCredentialsFactory
                 }
             },
             customCredentials: new UsernamePasswordCredentials('admin', 'password1', '127.0.0.1')
-        });
-        console.log('Admin client connected');
+    });
+    console.log('Admin client connected');
 
-        const adminMap = await adminClient.getMap('importantAdminMap');
-        console.log('Admin can create a map');
-        let value = await adminMap.get('someKey');
-        console.log('Admin can read from map:', value);
-        await adminMap.put('anotherKey', 'anotherValue'); // Should resolve
-        console.log('Admin can put to map');
-        value = await adminMap.get('anotherKey');
-        console.log('Value for the "anotherKey" is', value);
+    const adminMap = await adminClient.getMap('importantAdminMap');
+    console.log('Admin can create a map');
+    let value = await adminMap.get('someKey');
+    console.log('Admin can read from map:', value);
+    await adminMap.put('anotherKey', 'anotherValue'); // Should resolve
+    console.log('Admin can put to map');
+    value = await adminMap.get('anotherKey');
+    console.log('Value for the "anotherKey" is', value);
 
-        await adminClient.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await adminClient.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

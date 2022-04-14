@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ export enum MemberEvent {
 }
 
 /**
- * Cluster membership listener.
+ * Cluster membership listener. One of {@link memberAdded} or {@link memberRemoved} must exist.
  */
 export interface MembershipListener {
 
@@ -62,14 +62,14 @@ export interface MembershipListener {
      *
      * @param {MembershipEvent} event event object
      */
-    memberAdded(event: MembershipEvent): void;
+    memberAdded?(event: MembershipEvent): void;
 
     /**
      * Invoked when an existing member leaves the cluster.
      *
      * @param {MembershipEvent} event event object
      */
-    memberRemoved(event: MembershipEvent): void;
+    memberRemoved?(event: MembershipEvent): void;
 
 }
 

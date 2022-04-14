@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,23 +59,22 @@ const giveInformation = (timeofday) => {
 };
 
 (async () => {
-    try {
-        const client = await Client.newHazelcastClient({
+    const client = await Client.newHazelcastClient({
             serialization: {
                 customSerializers: [new CustomSerializer()]
             }
-        });
+    });
 
-        const t = new TimeOfDay(5, 32, 59);
-        giveInformation(t);
+    const t = new TimeOfDay(5, 32, 59);
+    giveInformation(t);
 
-        const map = await client.getMap('time');
-        await map.put(1, t);
-        const deserialized = await map.get(1);
-        giveInformation(deserialized);
+    const map = await client.getMap('time');
+    await map.put(1, t);
+    const deserialized = await map.get(1);
+    giveInformation(deserialized);
 
-        await client.shutdown();
-    } catch (err) {
-        console.error('Error occurred:', err);
-    }
-})();
+    await client.shutdown();
+})().catch(err => {
+    console.error('Error occurred:', err);
+    process.exit(1);
+});

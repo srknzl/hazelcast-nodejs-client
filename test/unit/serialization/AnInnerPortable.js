@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,12 +33,15 @@ AnInnerPortable.prototype.readPortable = function (reader) {
 };
 
 AnInnerPortable.prototype.equals = function (other) {
-    if (other === this)
+    if (other === this) {
         return true;
-    if (this.anInt !== other.anInt)
+    }
+    if (this.anInt !== other.anInt) {
         return false;
-    if (this.aFloat > other.aFloat + Number.EPSILON || this.aFloat < other.aFloat - Number.EPSILON)
+    }
+    if (this.aFloat > other.aFloat + Number.EPSILON || this.aFloat < other.aFloat - Number.EPSILON) {
         return false;
+    }
     return true;
 };
 

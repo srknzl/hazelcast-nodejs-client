@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,14 +29,13 @@ const { SerializationConfigImpl } = require('../../../lib/config/SerializationCo
 const { promiseLater } = require('../../TestUtil');
 
 describe('NearCacheTest', function () {
-
     const invalidateOnChange = [false, true];
     const ttls = [0, 1];
     const evictionPolicy = [EvictionPolicy.LFU, EvictionPolicy.LRU, EvictionPolicy.RANDOM, EvictionPolicy.NONE];
     const testConfigs = [];
-    evictionPolicy.forEach(function (evictionPolicy) {
-        invalidateOnChange.forEach(function (ioc) {
-            ttls.forEach(function (ttl) {
+    evictionPolicy.forEach((evictionPolicy) => {
+        invalidateOnChange.forEach((ioc) => {
+            ttls.forEach((ttl) => {
                 const testConfig = new NearCacheConfigImpl();
                 testConfig.invalidateOnChange = ioc;
                 testConfig.timeToLiveSeconds = ttl;
@@ -73,10 +72,9 @@ describe('NearCacheTest', function () {
     }
 
     describe('CacheRecord', function () {
-
         it('does not expire if ttl is 0', function (done) {
             const rec = new DataRecord(ds('key'), 'value', undefined, 0);
-            setTimeout(function () {
+            setTimeout(() => {
                 if (rec.isExpired()) {
                     done(new Error('Unlimited ttl record expired'));
                 } else {
@@ -87,7 +85,7 @@ describe('NearCacheTest', function () {
 
         it('expires after ttl', function (done) {
             const rec = new DataRecord(ds('key'), 'value', undefined, 1);
-            setTimeout(function () {
+            setTimeout(() => {
                 if (rec.isExpired()) {
                     done();
                 } else {
@@ -98,7 +96,7 @@ describe('NearCacheTest', function () {
 
         it('does not expire before ttl', function (done) {
             const rec = new DataRecord(ds('key'), 'value', undefined, 10);
-            setTimeout(function () {
+            setTimeout(() => {
                 if (rec.isExpired()) {
                     done(new Error('Record expired before ttl'));
                 } else {
@@ -109,7 +107,7 @@ describe('NearCacheTest', function () {
 
         it('expires after maxIdleSeconds', function (done) {
             const rec = new DataRecord(ds('key'), 'value', undefined, 100);
-            setTimeout(function () {
+            setTimeout(() => {
                 if (rec.isExpired(1)) {
                     done();
                 } else {
@@ -120,7 +118,7 @@ describe('NearCacheTest', function () {
 
         it('does not expire while active', function (done) {
             const rec = new DataRecord(ds('key'), 'value', undefined, 100);
-            setTimeout(function () {
+            setTimeout(() => {
                 rec.setAccessTime();
                 if (rec.isExpired(1)) {
                     done(new Error('expired'));
@@ -131,8 +129,7 @@ describe('NearCacheTest', function () {
         });
     });
 
-    testConfigs.forEach(function (testConfig) {
-
+    testConfigs.forEach((testConfig) => {
         describe(testConfig.toString(), function () {
             let nearCache;
 
@@ -218,7 +215,7 @@ describe('NearCacheTest', function () {
                 for (let i = 0; i < nearCache.evictionMaxSize; i++) {
                     nearCache.put(ds('k' + i), 'v' + i);
                 }
-                promiseAfter(nearCache.timeToLiveSeconds, function () {
+                promiseAfter(nearCache.timeToLiveSeconds, () => {
                     try {
                         nearCache.put(ds('laterentry'), 'laterval');
                         expect(nearCache.getStatistics().evictedCount).to.equal(0);
@@ -234,7 +231,6 @@ describe('NearCacheTest', function () {
     });
 
     describe('InMemory format', function () {
-
         it('Object', function () {
             const nearCacheConfig = new NearCacheConfigImpl();
             nearCacheConfig.inMemoryFormat = InMemoryFormat.OBJECT;

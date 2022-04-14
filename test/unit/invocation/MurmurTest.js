@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ const { expect } = require('chai');
 const { murmur } = require('../../../lib/invocation/Murmur');
 
 describe('MurmurTest', function () {
-
     // Expected values are from the Java implementation
     const payloads = [
         { input: Buffer.from('key-1'), expected: 1228513025 },

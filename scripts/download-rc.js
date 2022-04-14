@@ -1,6 +1,6 @@
 'use strict';
-const HZ_VERSION = '4.1.1';
-const HZ_TEST_VERSION = '4.1.1';
+const HZ_VERSION = '5.1-SNAPSHOT';
+const HZ_TEST_VERSION = '5.1-SNAPSHOT';
 const HAZELCAST_TEST_VERSION = HZ_TEST_VERSION;
 const HAZELCAST_VERSION = HZ_VERSION;
 const HAZELCAST_ENTERPRISE_VERSION = HZ_VERSION;
@@ -49,6 +49,7 @@ const downloadRC = () => {
             [
                 '-q',
                 'dependency:get',
+                '-Dtransitive=false',
                 `-DrepoUrl=${SNAPSHOT_REPO}`,
                 `-Dartifact=com.hazelcast:hazelcast-remote-controller:${HAZELCAST_RC_VERSION}`,
                 `-Ddest=hazelcast-remote-controller-${HAZELCAST_RC_VERSION}.jar`
@@ -71,6 +72,7 @@ const downloadRC = () => {
             [
                 '-q',
                 'dependency:get',
+                '-Dtransitive=false',
                 `-DrepoUrl=${TEST_REPO}`,
                 `-Dartifact=com.hazelcast:hazelcast:${HAZELCAST_TEST_VERSION}:jar:tests`,
                 `-Ddest=hazelcast-${HAZELCAST_TEST_VERSION}-tests.jar`
@@ -85,6 +87,28 @@ const downloadRC = () => {
         }
     }
 
+    if (fs.existsSync(`hazelcast-sql-${HAZELCAST_VERSION}.jar`)) {
+        console.log('hazelcast-sql.jar already exists, not downloading from maven.');
+    } else {
+        console.log(`Downloading: hazelcast sql jar com.hazelcast:hazelcast-sql:${HAZELCAST_VERSION}`);
+        const subprocess = spawnSync('mvn', [
+            '-q',
+            'dependency:get',
+            '-Dtransitive=false',
+            `-DrepoUrl=${REPO}`,
+            `-Dartifact=com.hazelcast:hazelcast-sql:${HAZELCAST_VERSION}`,
+            `-Ddest=hazelcast-sql-${HAZELCAST_VERSION}.jar`
+        ], {
+            stdio: 'inherit',
+            shell: ON_WINDOWS
+        });
+        if (subprocess.status !== 0) {
+            const subprocessTrace = subprocess.error ? subprocess.error.stack : '';
+            throw 'Failed download hazelcast sql jar'
+                + `com.hazelcast:hazelcast-sql:${HAZELCAST_VERSION} ${subprocessTrace}`;
+        }
+    }
+
     if (HAZELCAST_ENTERPRISE_KEY) {
         if (fs.existsSync(`hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar`)) {
             console.log('hazelcast-enterprise.jar already exists, not downloading from maven.');
@@ -94,6 +118,7 @@ const downloadRC = () => {
             const subprocess = spawnSync('mvn', [
                 '-q',
                 'dependency:get',
+                '-Dtransitive=false',
                 `-DrepoUrl=${ENTERPRISE_REPO}`,
                 `-Dartifact=com.hazelcast:hazelcast-enterprise:${HAZELCAST_ENTERPRISE_VERSION}`,
                 `-Ddest=hazelcast-enterprise-${HAZELCAST_ENTERPRISE_VERSION}.jar`
@@ -116,6 +141,7 @@ const downloadRC = () => {
             const subprocess = spawnSync('mvn', [
                 '-q',
                 'org.apache.maven.plugins:maven-dependency-plugin:2.8:get',
+                '-Dtransitive=false',
                 `-DrepoUrl=${ENTERPRISE_TEST_REPO}`,
                 `-Dartifact=com.hazelcast:hazelcast-enterprise:${HAZELCAST_TEST_VERSION}:jar:tests`,
                 `-Ddest=hazelcast-enterprise-${HAZELCAST_TEST_VERSION}-tests.jar`
@@ -138,6 +164,7 @@ const downloadRC = () => {
             const subprocess = spawnSync('mvn', [
                 '-q',
                 'dependency:get',
+                '-Dtransitive=false',
                 `-DrepoUrl=${REPO}`,
                 `-Dartifact=com.hazelcast:hazelcast:${HAZELCAST_VERSION}`,
                 `-Ddest=hazelcast-${HAZELCAST_VERSION}.jar`

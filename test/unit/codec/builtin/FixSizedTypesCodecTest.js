@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ const { expect } = require('chai');
 const { FixSizedTypesCodec } = require('../../../../lib/codec/builtin/FixSizedTypesCodec');
 
 describe('FixSizedTypesCodecTest', function () {
-
     const TWO_PWR_63_DBL = 9223372036854776000;
 
     it('should throw error when trying to encode negative number as long', function () {

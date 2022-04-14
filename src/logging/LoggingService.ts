@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,10 @@ import {DefaultLogger} from './DefaultLogger';
 import {ILogger, LogLevel} from './ILogger';
 import {enumFromString} from '../util/Util';
 
-/** @internal */
+/**
+ * Validates and constructs a valid logger instance and returns it.
+ * @internal
+ */
 export class LoggingService {
 
     private readonly logger: ILogger;
