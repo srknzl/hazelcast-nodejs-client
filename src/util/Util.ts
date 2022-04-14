@@ -89,7 +89,13 @@ export function getType(obj: any): string {
         if (t !== 'object') {
             return t;
         } else {
-            return ({}).toString.call(obj).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+            const match = ({}).toString.call(obj).match(/\s([a-zA-Z]+)/);
+
+            if (match === null) {
+                return 'unknown';
+            } else {
+                return match[1].toLowerCase();
+            }
         }
     }
 }
@@ -153,7 +159,7 @@ export function tryGetStringOrNull(val: any): string {
 }
 
 /** @internal */
-export function getStringOrUndefined(val: any): string {
+export function getStringOrUndefined(val: any): string | undefined {
     try {
         return tryGetString(val);
     } catch (e) {
@@ -162,7 +168,7 @@ export function getStringOrUndefined(val: any): string {
 }
 
 /** @internal */
-export function getBooleanOrUndefined(val: any): boolean {
+export function getBooleanOrUndefined(val: any): boolean | undefined {
     try {
         return tryGetBoolean(val);
     } catch (e) {
@@ -348,12 +354,13 @@ export function memberOfLargerSameVersionGroup(members: MemberImpl[]): MemberImp
     let version: MemberVersion;
 
     if (count0 > count1 || count0 === count1
-        && BuildInfo.calculateMemberVersion(version0) > BuildInfo.calculateMemberVersion(version1)) {
+        && BuildInfo.calculateMemberVersion(version0 as MemberVersion) >
+        BuildInfo.calculateMemberVersion(version1 as MemberVersion)) {
         count = count0;
-        version = version0;
+        version = version0 as MemberVersion;
     } else {
         count = count1;
-        version = version1;
+        version = version1 as MemberVersion;
     }
 
     // otherwise return a random member from the larger group
@@ -366,4 +373,6 @@ export function memberOfLargerSameVersionGroup(members: MemberImpl[]): MemberImp
             }
         }
     }
+
+    throw new Error('should never get here');
 }

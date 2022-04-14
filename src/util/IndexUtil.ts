@@ -43,7 +43,7 @@ export class IndexUtil {
      */
     static validateAndNormalize(mapName: string, config: IndexConfig): InternalIndexConfig {
         // Validate attributes
-        const originalAttributeNames = config.attributes;
+        const originalAttributeNames = config.attributes || [];
 
         if (originalAttributeNames.length === 0) {
             throw new TypeError('Index must have at least one attribute: ' + config);
@@ -64,7 +64,7 @@ export class IndexUtil {
         const normalizedAttributeNames = new Array<string>(originalAttributeNames.length);
         for (let i = 0; i < originalAttributeNames.length; i++) {
             let originalAttributeName = originalAttributeNames[i];
-            this.validateAttribute(config.name, originalAttributeName);
+            this.validateAttribute(config, originalAttributeName);
 
             originalAttributeName = originalAttributeName.trim();
             const normalizedAttributeName = this.canonicalizeAttribute(originalAttributeName);
@@ -113,16 +113,16 @@ export class IndexUtil {
      * @param indexName Index name.
      * @param attributeName Attribute name.
      */
-    static validateAttribute(indexName: string, attributeName: string): void {
+    static validateAttribute(config: IndexConfig, attributeName: string): void {
         if (attributeName == null) {
-            throw new TypeError('Attribute name cannot be null: ' + indexName);
+            throw new TypeError('Attribute name cannot be null: ' + JSON.stringify(config));
         }
         const attributeName0 = attributeName.trim();
         if (attributeName0.length === 0) {
-            throw new TypeError('Attribute name cannot be empty: ' + indexName);
+            throw new TypeError('Attribute name cannot be empty: ' + JSON.stringify(config));
         }
         if (attributeName0.endsWith('.')) {
-            throw new TypeError('Attribute name cannot end with dot [config= ' + indexName
+            throw new TypeError('Attribute name cannot end with dot [config= ' + JSON.stringify(config)
                 + ', attribute=' + attributeName + ']');
         }
     }

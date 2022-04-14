@@ -52,7 +52,7 @@ export class MapPutIfAbsentCodec {
         return clientMessage;
     }
 
-    static decodeResponse(clientMessage: ClientMessage): Data {
+    static decodeResponse(clientMessage: ClientMessage): Data | null {
         // empty initial frame
         clientMessage.nextFrame();
 

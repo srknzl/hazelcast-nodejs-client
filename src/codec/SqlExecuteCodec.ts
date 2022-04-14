@@ -47,15 +47,15 @@ const RESPONSE_UPDATE_COUNT_OFFSET = RESPONSE_BACKUP_ACKS_OFFSET + BitsUtil.BYTE
 
 /** @internal */
 export interface SqlExecuteResponseParams {
-    rowMetadata: SqlColumnMetadataImpl[];
-    rowPage: SqlPage;
+    rowMetadata: SqlColumnMetadataImpl[] | null;
+    rowPage: SqlPage | null;
     updateCount: Long;
-    error: SqlError;
+    error: SqlError | null;
 }
 
 /** @internal */
 export class SqlExecuteCodec {
-    static encodeRequest(sql: string, parameters: Data[], timeoutMillis: Long, cursorBufferSize: number, schema: string, expectedResultType: number, queryId: SqlQueryId, skipUpdateStatistics: boolean): ClientMessage {
+    static encodeRequest(sql: string, parameters: Data[], timeoutMillis: Long, cursorBufferSize: number, schema: string | null, expectedResultType: number, queryId: SqlQueryId, skipUpdateStatistics: boolean): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
 

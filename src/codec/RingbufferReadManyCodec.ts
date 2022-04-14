@@ -42,13 +42,13 @@ const RESPONSE_NEXT_SEQ_OFFSET = RESPONSE_READ_COUNT_OFFSET + BitsUtil.INT_SIZE_
 export interface RingbufferReadManyResponseParams {
     readCount: number;
     items: Data[];
-    itemSeqs: Long[];
+    itemSeqs: Long[] | null;
     nextSeq: Long;
 }
 
 /** @internal */
 export class RingbufferReadManyCodec {
-    static encodeRequest(name: string, startSequence: Long, minCount: number, maxCount: number, filter: Data): ClientMessage {
+    static encodeRequest(name: string, startSequence: Long, minCount: number, maxCount: number, filter: Data | null): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
 

@@ -44,18 +44,18 @@ const RESPONSE_FAILOVER_SUPPORTED_OFFSET = RESPONSE_CLUSTER_ID_OFFSET + BitsUtil
 /** @internal */
 export interface ClientAuthenticationCustomResponseParams {
     status: number;
-    address: AddressImpl;
-    memberUuid: UUID;
+    address: AddressImpl | null;
+    memberUuid: UUID | null | null;
     serializationVersion: number;
     serverHazelcastVersion: string;
     partitionCount: number;
-    clusterId: UUID;
+    clusterId: UUID | null;
     failoverSupported: boolean;
 }
 
 /** @internal */
 export class ClientAuthenticationCustomCodec {
-    static encodeRequest(clusterName: string, credentials: Buffer, uuid: UUID, clientType: string, serializationVersion: number, clientHazelcastVersion: string, clientName: string, labels: string[]): ClientMessage {
+    static encodeRequest(clusterName: string, credentials: Buffer, uuid: UUID | null | null, clientType: string, serializationVersion: number, clientHazelcastVersion: string, clientName: string, labels: string[]): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
 

@@ -37,7 +37,7 @@ const RESPONSE_MAX_IDLE_OFFSET = RESPONSE_BACKUP_ACKS_OFFSET + BitsUtil.BYTE_SIZ
 
 /** @internal */
 export interface MapGetEntryViewResponseParams {
-    response: SimpleEntryView<Data, Data>;
+    response: SimpleEntryView<Data, Data> | null;
     maxIdle: Long;
 }
 

@@ -198,7 +198,7 @@ export class SerializationServiceV1 implements SerializationService {
         if (obj === undefined) {
             throw new RangeError('undefined cannot be serialized.');
         }
-        let serializer: Serializer = null;
+        let serializer: Serializer | null = null;
         if (obj === null) {
             serializer = this.findSerializerByName('null', false);
         }
@@ -221,8 +221,8 @@ export class SerializationServiceV1 implements SerializationService {
 
     }
 
-    private lookupDefaultSerializer(obj: any): Serializer {
-        let serializer: Serializer = null;
+    private lookupDefaultSerializer(obj: object | Array<any>): Serializer | null {
+        let serializer: Serializer | null = null;
         if (SerializationServiceV1.isIdentifiedDataSerializable(obj)) {
             return this.findSerializerByName('identified', false);
         }
@@ -231,10 +231,10 @@ export class SerializationServiceV1 implements SerializationService {
         }
         const objectType = Util.getType(obj);
         if (objectType === 'array') {
-            if (obj.length === 0) {
+            if ((obj as Array<any>).length === 0) {
                 serializer = this.findSerializerByName('number', true);
             } else {
-                serializer = this.findSerializerByName(Util.getType(obj[0]), true);
+                serializer = this.findSerializerByName(Util.getType((obj as Array<any>)[0]), true);
             }
         } else {
             serializer = this.findSerializerByName(objectType, false);
@@ -242,14 +242,14 @@ export class SerializationServiceV1 implements SerializationService {
         return serializer;
     }
 
-    private lookupCustomSerializer(obj: any): Serializer {
+    private lookupCustomSerializer(obj: any): Serializer | null {
         if (SerializationServiceV1.isCustomSerializable(obj)) {
             return this.findSerializerById(obj.hzCustomId);
         }
         return null;
     }
 
-    private lookupGlobalSerializer(): Serializer {
+    private lookupGlobalSerializer(): Serializer | null {
         return this.findSerializerByName('!global', false);
     }
 
@@ -337,7 +337,7 @@ export class SerializationServiceV1 implements SerializationService {
         return (typeof object[prop] === 'number' && object[prop] >= 1);
     }
 
-    private findSerializerByName(name: string, isArray: boolean): Serializer {
+    private findSerializerByName(name: string, isArray: boolean): Serializer | null {
         let convertedName: string;
         if (name === 'number') {
             convertedName = this.serializationConfig.defaultNumberType;

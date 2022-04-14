@@ -35,7 +35,7 @@ const RESPONSE_RESPONSE_OFFSET = RESPONSE_BACKUP_ACKS_OFFSET + BitsUtil.BYTE_SIZ
 
 /** @internal */
 export class AtomicRefCompareAndSetCodec {
-    static encodeRequest(groupId: RaftGroupId, name: string, oldValue: Data, newValue: Data): ClientMessage {
+    static encodeRequest(groupId: RaftGroupId, name: string, oldValue: Data | null, newValue: Data | null): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(false);
 

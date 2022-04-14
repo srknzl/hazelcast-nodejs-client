@@ -32,7 +32,7 @@ const RESPONSE_RESPONSE_OFFSET = RESPONSE_BACKUP_ACKS_OFFSET + BitsUtil.BYTE_SIZ
 
 /** @internal */
 export class MapRemoveEntryListenerCodec {
-    static encodeRequest(name: string, registrationId: UUID): ClientMessage {
+    static encodeRequest(name: string, registrationId: UUID | null): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
 

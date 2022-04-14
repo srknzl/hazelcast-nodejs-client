@@ -34,7 +34,7 @@ const REQUEST_INITIAL_FRAME_SIZE = REQUEST_EXPECTED_ROUND_OFFSET + BitsUtil.INT_
 
 /** @internal */
 export class CountDownLatchCountDownCodec {
-    static encodeRequest(groupId: RaftGroupId, name: string, invocationUid: UUID, expectedRound: number): ClientMessage {
+    static encodeRequest(groupId: RaftGroupId, name: string, invocationUid: UUID | null, expectedRound: number): ClientMessage {
         const clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
 

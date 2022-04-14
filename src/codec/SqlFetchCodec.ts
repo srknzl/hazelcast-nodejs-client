@@ -36,8 +36,8 @@ const REQUEST_INITIAL_FRAME_SIZE = REQUEST_CURSOR_BUFFER_SIZE_OFFSET + BitsUtil.
 
 /** @internal */
 export interface SqlFetchResponseParams {
-    rowPage: SqlPage;
-    error: SqlError;
+    rowPage: SqlPage | null;
+    error: SqlError | null;
 }
 
 /** @internal */
