@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,8 @@ import {MessageListener} from './MessageListener';
  * lost when a node goes down.
  *
  * Methods that require serialization/deserialization may throw RangeError, e.g when there is no suitable
- * serializer for a certain type.
+ * serializer for a certain type. Also they may throw {@link HazelcastSerializationError} if a compact
+ * object is cannot be deserialized due to unknown schema.
  */
 export interface ITopic<E> extends DistributedObject {
 

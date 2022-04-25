@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import {UnsupportedOperationError} from '../../core';
 import {Data} from '../../serialization/Data';
 import {SerializationService} from '../../serialization/SerializationService';
 import {InvocationService} from '../../invocation/InvocationService';
+import {Schema} from '../../serialization/compact/Schema';
 
 /**
  * Common super class for any CP Subsystem proxy.
@@ -56,8 +57,8 @@ export abstract class BaseCPProxy {
 
     destroy(): Promise<void> {
         return this.encodeInvokeOnRandomTarget(
-            CPGroupDestroyCPObjectCodec, this.groupId, this.serviceName, this.objectName
-        ).then(() => {});
+            CPGroupDestroyCPObjectCodec, () => {}, this.groupId, this.serviceName, this.objectName
+        );
     }
 
     protected toData(object: any): Data {
@@ -68,14 +69,22 @@ export abstract class BaseCPProxy {
         return this.serializationService.toObject(data);
     }
 
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    protected registerSchema(schema: Schema, clazz: Function | undefined): Promise<void> {
+        return this.invocationService.registerSchema(schema, clazz);
+    }
+
     /**
      * Encodes a request from a codec and invokes it on any node.
      * @param codec
+     * @param handler
      * @param codecArguments
-     * @returns response message
+     * @returns Promise that resolves to the return value of `handler`
      */
-    protected encodeInvokeOnRandomTarget(codec: any, ...codecArguments: any[]): Promise<ClientMessage> {
+    protected encodeInvokeOnRandomTarget<V>(
+        codec: any, handler: (clientMessage: ClientMessage) => V, ...codecArguments: any[]
+    ): Promise<V> {
         const clientMessage = codec.encodeRequest(...codecArguments);
-        return this.invocationService.invokeOnRandomTarget(clientMessage);
+        return this.invocationService.invokeOnRandomTarget(clientMessage, handler);
     }
 }

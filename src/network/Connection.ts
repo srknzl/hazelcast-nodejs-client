@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ export class PipelinedWriter extends Writer {
         const writeBatch = this.queue.slice(0, queueIdx);
         this.queue = this.queue.slice(queueIdx);
 
-        let buf;
+        let buf: Buffer;
         if (writeBatch.length === 1 && totalLength > this.threshold) {
             // take the only large message
             buf = writeBatch[0].message.toBuffer();

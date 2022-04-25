@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import {SerializationService} from '../serialization/SerializationService';
 import {ConnectionRegistry} from '../network/ConnectionRegistry';
 import {ListenerService} from '../listener/ListenerService';
 import {ClusterService} from '../invocation/ClusterService';
+import {SchemaService} from '../serialization/compact/SchemaService';
 
 /** @internal */
 export class PartitionSpecificProxy extends BaseProxy {
@@ -39,7 +40,8 @@ export class PartitionSpecificProxy extends BaseProxy {
         serializationService: SerializationService,
         listenerService: ListenerService,
         clusterService: ClusterService,
-        connectionRegistry: ConnectionRegistry
+        connectionRegistry: ConnectionRegistry,
+        schemaService: SchemaService
     ) {
         super(
             serviceName,
@@ -50,12 +52,15 @@ export class PartitionSpecificProxy extends BaseProxy {
             serializationService,
             listenerService,
             clusterService,
-            connectionRegistry
+            connectionRegistry,
+            schemaService
         );
         this.partitionId = this.partitionService.getPartitionId(this.getPartitionKey());
     }
 
-    protected encodeInvoke(codec: any, ...codecArguments: any[]): Promise<ClientMessage> {
-        return this.encodeInvokeOnPartition(codec, this.partitionId, ...codecArguments);
+    protected encodeInvoke<V>(
+        codec: any, handler: (clientMessage: ClientMessage) => V, ...codecArguments: any[]
+    ): Promise<V> {
+        return this.encodeInvokeOnPartition(codec, this.partitionId, handler, ...codecArguments);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -192,26 +192,22 @@ export class CPSessionManager {
 
     private requestNewSession(groupId: RaftGroupId): Promise<CPSessionCreateSessionResponseParams> {
         const clientMessage = CPSessionCreateSessionCodec.encodeRequest(groupId, this.clientName);
-        return this.invocationService.invokeOnRandomTarget(clientMessage)
-            .then(CPSessionCreateSessionCodec.decodeResponse);
+        return this.invocationService.invokeOnRandomTarget(clientMessage, CPSessionCreateSessionCodec.decodeResponse);
     }
 
     private requestCloseSession(groupId: RaftGroupId, sessionId: Long): Promise<boolean> {
         const clientMessage = CPSessionCloseSessionCodec.encodeRequest(groupId, sessionId);
-        return this.invocationService.invokeOnRandomTarget(clientMessage)
-            .then(CPSessionCloseSessionCodec.decodeResponse);
+        return this.invocationService.invokeOnRandomTarget(clientMessage, CPSessionCloseSessionCodec.decodeResponse);
     }
 
     private requestHeartbeat(groupId: RaftGroupId, sessionId: Long): Promise<void> {
         const clientMessage = CPSessionHeartbeatSessionCodec.encodeRequest(groupId, sessionId);
-        return this.invocationService.invokeOnRandomTarget(clientMessage)
-            .then(() => {});
+        return this.invocationService.invokeOnRandomTarget(clientMessage, () => {});
     }
 
     private requestGenerateThreadId(groupId: RaftGroupId): Promise<Long> {
         const clientMessage = CPSessionGenerateThreadIdCodec.encodeRequest(groupId);
-        return this.invocationService.invokeOnRandomTarget(clientMessage)
-            .then(CPSessionGenerateThreadIdCodec.decodeResponse);
+        return this.invocationService.invokeOnRandomTarget(clientMessage, CPSessionGenerateThreadIdCodec.decodeResponse);
     }
 
     private scheduleHeartbeatTask(heartbeatMillis: number): void {

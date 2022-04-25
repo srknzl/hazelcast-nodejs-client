@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 
 import {UUID} from './UUID';
+import * as Long from 'long';
+import {Schema} from '../serialization/compact/Schema';
 
 /**
  * Represents a stack trace element of server-side exception.
@@ -71,6 +73,32 @@ export class HazelcastError extends Error {
 
 export class HazelcastSerializationError extends HazelcastError {
     constructor(msg: string, cause?: Error, serverStackTrace?: ServerErrorStackElement[]) {
+        super(msg, cause, serverStackTrace);
+    }
+}
+
+/**
+ * @internal
+ */
+export class SchemaNotFoundError extends HazelcastError {
+    constructor(msg: string, public readonly schemaId: Long, cause?: Error, serverStackTrace?: ServerErrorStackElement[]) {
+        super(msg, cause, serverStackTrace);
+    }
+}
+
+/**
+ * @internal
+ */
+export class SchemaNotReplicatedError extends HazelcastError {
+    constructor(
+        msg: string,
+        public readonly schema: Schema,
+        // clazz is undefined when generic record schema is not replicated
+        /* eslint-disable-next-line @typescript-eslint/ban-types */
+        public readonly clazz: Function | undefined,
+        cause?: Error,
+        serverStackTrace?: ServerErrorStackElement[]
+    ) {
         super(msg, cause, serverStackTrace);
     }
 }

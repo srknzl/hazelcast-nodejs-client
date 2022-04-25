@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -176,7 +176,7 @@ describe('MapStoreTest', function () {
         };
         map.evictAll()
             .then(() => map.put('1', '1'))
-            .then(() => map.addEntryListener(listener, null, true))
+            .then(() => map.addEntryListener(listener, undefined, true))
             .then(id => {
                 listenerId = id;
                 return map.putAll([['1', '2']]);
@@ -201,7 +201,7 @@ describe('MapStoreTest', function () {
         };
         map.evictAll()
             .then(() => map.put('1', '1'))
-            .then(() => map.addEntryListener(listener, null, true))
+            .then(() => map.addEntryListener(listener, undefined, true))
             .then(id => {
                 listenerId = id;
                 return map.setAll([['1', '2']]);

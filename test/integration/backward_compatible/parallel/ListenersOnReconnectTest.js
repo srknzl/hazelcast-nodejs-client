@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -82,8 +82,15 @@ describe('ListenersOnReconnectTest', function () {
 
             const connectionRegistration = activeRegistrations.get(activeConnections[0]);
             const correlationId = connectionRegistration.correlationId;
-            const eventHandlers = client.getInvocationService().eventHandlers;
-            expect(eventHandlers.has(correlationId)).to.be.true;
+
+            let invocationsWithEventHandlers;
+            if (TestUtil.isClientVersionAtLeast('5.1')) {
+                invocationsWithEventHandlers = client.getInvocationService().invocationsWithEventHandlers;
+            } else {
+                invocationsWithEventHandlers = client.getInvocationService().eventHandlers;
+            }
+
+            expect(invocationsWithEventHandlers.has(correlationId)).to.be.true;
         }, undefined, 600 * 1000);
 
         await map.put('keyx', 'valx');

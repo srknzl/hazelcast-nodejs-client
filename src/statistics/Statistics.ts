@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -134,8 +134,7 @@ export class Statistics {
         compressor.generateBlob()
             .then((blob) => {
                 const request = ClientStatisticsCodec.encodeRequest(collectionTimestamp, stats, blob);
-                return this.invocationService
-                    .invokeOnConnection(connection, request);
+                return this.invocationService.invokeOnConnection(connection, request, () => {});
             })
             .catch((err) => {
                 this.logger.trace('Statistics', 'Could not send stats', err);

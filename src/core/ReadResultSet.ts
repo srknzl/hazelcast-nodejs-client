@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ export interface ReadResultSet<T> {
      * Gets the item at the given index.
      *
      * @param index
+     * @throws {@link HazelcastSerializationError} if the object to be returned is a compact object whose schema is not known
      * @returns the found item or `undefined` if the index is out of bounds
      */
     get(index: number): T;

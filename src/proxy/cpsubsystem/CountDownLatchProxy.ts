@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,11 +63,12 @@ export class CountDownLatchProxy extends BaseCPProxy implements ICountDownLatch 
         const invocationUid = UuidUtil.generate();
         return this.encodeInvokeOnRandomTarget(
             CountDownLatchAwaitCodec,
+            CountDownLatchAwaitCodec.decodeResponse,
             this.groupId,
             this.objectName,
             invocationUid,
             timeout
-        ).then(CountDownLatchAwaitCodec.decodeResponse);
+        );
     }
 
     countDown(): Promise<void> {
@@ -90,36 +91,40 @@ export class CountDownLatchProxy extends BaseCPProxy implements ICountDownLatch 
     private getRound(): Promise<number> {
         return this.encodeInvokeOnRandomTarget(
             CountDownLatchGetRoundCodec,
+            CountDownLatchGetRoundCodec.decodeResponse,
             this.groupId,
             this.objectName
-        ).then(CountDownLatchGetRoundCodec.decodeResponse);
+        );
     }
 
     private requestCountDown(round: number, invocationUid: UUID): Promise<void> {
         return this.encodeInvokeOnRandomTarget(
             CountDownLatchCountDownCodec,
+            () => {},
             this.groupId,
             this.objectName,
             invocationUid,
             round
-        ).then(() => {});
+        );
     }
 
     getCount(): Promise<number> {
         return this.encodeInvokeOnRandomTarget(
             CountDownLatchGetCountCodec,
+            CountDownLatchGetCountCodec.decodeResponse,
             this.groupId,
             this.objectName
-        ).then(CountDownLatchGetCountCodec.decodeResponse);
+        );
     }
 
     trySetCount(count: number): Promise<boolean> {
         assertPositiveNumber(count);
         return this.encodeInvokeOnRandomTarget(
             CountDownLatchTrySetCountCodec,
+            CountDownLatchTrySetCountCodec.decodeResponse,
             this.groupId,
             this.objectName,
             count
-        ).then(CountDownLatchTrySetCountCodec.decodeResponse);
+        );
     }
 }

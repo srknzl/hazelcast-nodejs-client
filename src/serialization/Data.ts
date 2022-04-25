@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,10 +62,9 @@ export interface Data {
     equals(other: Data): boolean;
 
     /**
-     * Returns true if the object is a portable object
+     * Returns true if this Data is serialized in CompactFormat
      */
-    isPortable(): boolean;
-
+    isCompact(): boolean;
 }
 
 /**
@@ -148,6 +147,8 @@ export interface PositionalDataOutput extends DataOutput {
     pwrite(position: number, byte: number | Buffer): void;
 
     pwriteBoolean(position: number, val: boolean): void;
+
+    pwriteBooleanBit(position: number, bitIndex: number, val: boolean): void;
 
     pwriteByte(position: number, byte: number): void;
 

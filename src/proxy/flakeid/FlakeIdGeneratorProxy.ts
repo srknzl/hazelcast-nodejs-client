@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ import {SerializationService} from '../../serialization/SerializationService';
 import {ConnectionRegistry} from '../../network/ConnectionRegistry';
 import {ListenerService} from '../../listener/ListenerService';
 import {ClusterService} from '../../invocation/ClusterService';
+import {SchemaService} from '../../serialization/compact/SchemaService';
 
 /** @internal */
 export class FlakeIdGeneratorProxy extends BaseProxy implements FlakeIdGenerator {
@@ -46,7 +47,8 @@ export class FlakeIdGeneratorProxy extends BaseProxy implements FlakeIdGenerator
         serializationService: SerializationService,
         listenerService: ListenerService,
         clusterService: ClusterService,
-        connectionRegistry: ConnectionRegistry
+        connectionRegistry: ConnectionRegistry,
+        schemaService: SchemaService
     ) {
         super(
             serviceName,
@@ -57,15 +59,15 @@ export class FlakeIdGeneratorProxy extends BaseProxy implements FlakeIdGenerator
             serializationService,
             listenerService,
             clusterService,
-            connectionRegistry
+            connectionRegistry,
+            schemaService
         );
         this.config = (clientConfig as ClientConfigImpl).getFlakeIdGeneratorConfig(name);
         this.autoBatcher = new AutoBatcher(() => {
-            return this.encodeInvokeOnRandomTarget(FlakeIdGeneratorNewIdBatchCodec, this.config.prefetchCount)
-                .then((clientMessage) => {
-                    const response = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(clientMessage);
-                    return new Batch(this.config.prefetchValidityMillis, response.base, response.increment, response.batchSize);
-                });
+            return this.encodeInvokeOnRandomTarget(FlakeIdGeneratorNewIdBatchCodec, (clientMessage) => {
+                const response = FlakeIdGeneratorNewIdBatchCodec.decodeResponse(clientMessage);
+                return new Batch(this.config.prefetchValidityMillis, response.base, response.increment, response.batchSize);
+            }, this.config.prefetchCount);
         });
     }
 

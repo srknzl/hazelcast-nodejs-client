@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -205,26 +205,45 @@ export class FencedLockProxy extends CPSessionAwareProxy implements FencedLock {
 
     private requestLock(sessionId: Long, threadId: Long, invocationUid: UUID): Promise<Long> {
         return this.encodeInvokeOnRandomTarget(
-            FencedLockLockCodec, this.groupId, this.objectName, sessionId, threadId, invocationUid
-        ).then(FencedLockLockCodec.decodeResponse);
+            FencedLockLockCodec,
+            FencedLockLockCodec.decodeResponse,
+            this.groupId,
+            this.objectName,
+            sessionId,
+            threadId,
+            invocationUid
+        );
     }
 
     private requestTryLock(sessionId: Long, threadId: Long, invocationUid: UUID, timeout: number): Promise<Long> {
         return this.encodeInvokeOnRandomTarget(
-            FencedLockTryLockCodec, this.groupId, this.objectName, sessionId, threadId, invocationUid, timeout
-        ).then(FencedLockTryLockCodec.decodeResponse);
+            FencedLockTryLockCodec,
+            FencedLockTryLockCodec.decodeResponse,
+            this.groupId,
+            this.objectName,
+            sessionId,
+            threadId,
+            invocationUid,
+            timeout
+        );
     }
 
     private requestUnlock(sessionId: Long, threadId: Long, invocationUid: UUID): Promise<boolean> {
         return this.encodeInvokeOnRandomTarget(
-            FencedLockUnlockCodec, this.groupId, this.objectName, sessionId, threadId, invocationUid
-        ).then(FencedLockUnlockCodec.decodeResponse);
+            FencedLockUnlockCodec,
+            FencedLockUnlockCodec.decodeResponse,
+            this.groupId,
+            this.objectName,
+            sessionId,
+            threadId,
+            invocationUid
+        );
     }
 
     private requestLockOwnershipState(): Promise<FencedLockGetLockOwnershipResponseParams> {
         return this.encodeInvokeOnRandomTarget(
-            FencedLockGetLockOwnershipCodec, this.groupId, this.objectName
-        ).then(FencedLockGetLockOwnershipCodec.decodeResponse);
+            FencedLockGetLockOwnershipCodec, FencedLockGetLockOwnershipCodec.decodeResponse, this.groupId, this.objectName
+        );
     }
 
     private static extractThreadId(fence: Fence): number {

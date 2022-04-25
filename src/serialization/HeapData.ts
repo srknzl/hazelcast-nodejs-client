@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@ export const HEAP_DATA_OVERHEAD: number = DATA_OFFSET;
 /** @internal */
 export class HeapData implements Data {
 
+    private static readonly TYPE_COMPACT = -55;
+    private static readonly TYPE_PORTABLE = -1;
+    private static readonly TYPE_JSON = -130
     private readonly payload: Buffer;
 
     constructor(buffer: Buffer) {
@@ -111,11 +114,7 @@ export class HeapData implements Data {
             && this.payload.readIntBE(PARTITION_HASH_OFFSET, 4) !== 0;
     }
 
-    /**
-     * Returns true if the object is a portable object
-     */
-    isPortable(): boolean {
-        return false;
+    isCompact(): boolean {
+        return this.getType() === HeapData.TYPE_COMPACT;
     }
-
 }

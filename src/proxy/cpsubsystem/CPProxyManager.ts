@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,8 +126,7 @@ export class CPProxyManager {
 
     private getGroupId(proxyName: string): Promise<RaftGroupId> {
         const clientMessage = CPGroupCreateCPGroupCodec.encodeRequest(proxyName);
-        return this.invocationService.invokeOnRandomTarget(clientMessage)
-            .then(CPGroupCreateCPGroupCodec.decodeResponse);
+        return this.invocationService.invokeOnRandomTarget(clientMessage, CPGroupCreateCPGroupCodec.decodeResponse);
     }
 
     private createFencedLock(groupId: RaftGroupId, proxyName: string, objectName: string): FencedLock {
@@ -153,8 +152,7 @@ export class CPProxyManager {
 
     private createSemaphore(groupId: RaftGroupId, proxyName: string, objectName: string): Promise<ISemaphore> {
         const clientMessage = SemaphoreGetSemaphoreTypeCodec.encodeRequest(proxyName);
-        return this.invocationService.invokeOnRandomTarget(clientMessage)
-            .then(SemaphoreGetSemaphoreTypeCodec.decodeResponse)
+        return this.invocationService.invokeOnRandomTarget(clientMessage, SemaphoreGetSemaphoreTypeCodec.decodeResponse)
             .then((jdkCompatible) => {
                 return jdkCompatible
                     ? new SessionlessSemaphoreProxy(

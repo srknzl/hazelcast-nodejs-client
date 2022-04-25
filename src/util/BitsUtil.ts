@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2021, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ export class BitsUtil {
     static readonly UUID_SIZE_IN_BYTES = BitsUtil.BOOLEAN_SIZE_IN_BYTES + 2 * BitsUtil.LONG_SIZE_IN_BYTES;
 
     static readonly NULL_ARRAY_LENGTH = -1;
+    static readonly BITS_IN_A_BYTE = 8;
 
     static writeUInt32(buffer: Buffer, pos: number, val: number, isBigEndian: boolean): void {
         if (isBigEndian) {
