@@ -18,14 +18,23 @@
 const expect = require('chai').expect;
 const RC = require('./RC');
 const { Client } = require('../.');
-const Util = require('../lib/util/Util');
-const TestUtil = require('./TestUtil');
+const TestUtil = require('./Util');
+const { deferredPromise } = require('../lib/util/Util');
 
 describe('ListenersOnReconnectTest', function () {
 
     let client;
     let cluster;
     let map;
+
+    const getActiveRegistrations = (client, registrationId) => {
+        const listenerService = client.getListenerService();
+        const registrationMap = listenerService.activeRegistrations.get(registrationId);
+        if (registrationMap === undefined) {
+            return new Map();
+        }
+        return registrationMap;
+    };
 
     beforeEach(async function () {
         cluster = await RC.createCluster(null, null);
@@ -38,7 +47,8 @@ describe('ListenersOnReconnectTest', function () {
     });
 
     async function closeTwoMembersOutOfThreeAndTestListener(isSmart, membersToClose, turnoffMember) {
-        const deferred = Util.deferredPromise();
+        const deferred = deferredPromise();
+
         const members = await Promise.all([
             RC.startMember(cluster.id),
             RC.startMember(cluster.id),
@@ -48,11 +58,6 @@ describe('ListenersOnReconnectTest', function () {
             clusterName: cluster.id,
             network: {
                 smartRouting: isSmart
-            },
-            properties: {
-                'hazelcast.client.heartbeat.interval': 1000,
-                'hazelcast.client.heartbeat.timeout': 3000,
-                'hazelcast.logging.level': 'TRACE'
             }
         });
         map = await client.getMap('testmap');
@@ -80,17 +85,20 @@ describe('ListenersOnReconnectTest', function () {
 
         // Assert that connections are closed and the listener is reregistered.
         await TestUtil.assertTrueEventually(async () => {
-            const activeConnectionsCount = TestUtil.getConnections(client).length;
-            expect(activeConnectionsCount).to.be.equal(1);
-            const activeRegistrations = TestUtil.getActiveRegistrations(client, registrationId);
-            expect([...activeRegistrations.keys()].length).to.be.equal(1);
+            const activeConnections = client.getConnectionManager().getActiveConnections();
+            expect(activeConnections.length).to.be.equal(1);
+
+            const activeRegistrations = getActiveRegistrations(client, registrationId);
+            const connectionsThatHasListener = [...activeRegistrations.keys()];
+            expect(connectionsThatHasListener.length).to.be.equal(1);
+            expect(connectionsThatHasListener[0]).to.be.equal(activeConnections[0]);
         });
 
         await map.put('keyx', 'valx');
         await deferred.promise;
     }
 
-    [true, false].forEach(function (isSmart) {
+    [true, false].forEach((isSmart) => {
 
         /**
          * We use three members to simulate all configurations where connection is closed to;
@@ -123,45 +131,58 @@ describe('ListenersOnReconnectTest', function () {
             await closeTwoMembersOutOfThreeAndTestListener(isSmart, [0, 2], RC.shutdownMember);
         });
 
-        it('restart member, listener still receives map.put event [smart=' + isSmart + ']', function (done) {
-            async function testListener(done) {
-                const member = await RC.startMember(cluster.id);
-                client = await Client.newHazelcastClient({
-                    clusterName: cluster.id,
-                    network: {
-                        smartRouting: isSmart
-                    },
-                    properties: {
-                        'hazelcast.client.heartbeat.interval': 1000
+        it('restart member, listener still receives map.put event [smart=' + isSmart + ']', async function () {
+            const deferred = deferredPromise();
+            const member = await RC.startMember(cluster.id);
+            client = await Client.newHazelcastClient({
+                clusterName: cluster.id,
+                network: {
+                    smartRouting: isSmart
+                }
+            });
+            map = await client.getMap('testmap');
+
+            const listener = {
+                added: (entryEvent) => {
+                    try {
+                        expect(entryEvent.name).to.equal('testmap');
+                        expect(entryEvent.key).to.equal('keyx');
+                        expect(entryEvent.value).to.equal('valx');
+                        expect(entryEvent.oldValue).to.be.equal(null);
+                        expect(entryEvent.mergingValue).to.be.equal(null);
+                        expect(entryEvent.member).to.not.be.equal(null);
+                        deferred.resolve();
+                    } catch (err) {
+                        deferred.reject(err);
                     }
-                });
-                map = await client.getMap('testmap');
+                }
+            };
+            const registrationId = await map.addEntryListener(listener, 'keyx', true);
 
-                const listener = {
-                    added: (entryEvent) => {
-                        try {
-                            expect(entryEvent.name).to.equal('testmap');
-                            expect(entryEvent.key).to.equal('keyx');
-                            expect(entryEvent.value).to.equal('valx');
-                            expect(entryEvent.oldValue).to.be.equal(null);
-                            expect(entryEvent.mergingValue).to.be.equal(null);
-                            expect(entryEvent.member).to.not.be.equal(null);
-                            done();
-                        } catch (err) {
-                            done(err);
-                        }
-                    }
-                };
-                await map.addEntryListener(listener, 'keyx', true);
+            await RC.terminateMember(cluster.id, member.uuid);
+            // Assert that the connection is closed and the listener is removed.
+            await TestUtil.assertTrueEventually(async () => {
+                const activeConnections = client.getConnectionManager().getActiveConnections();
+                expect(activeConnections.length).to.be.equal(0);
 
-                await RC.terminateMember(cluster.id, member.uuid);
-                await RC.startMember(cluster.id);
+                const activeRegistrations = getActiveRegistrations(client, registrationId);
+                expect(activeRegistrations.size).to.be.equal(0);
+            });
+            await RC.startMember(cluster.id);
 
-                await TestUtil.promiseWaitMilliseconds(8000);
-                return map.put('keyx', 'valx');
-            }
+            // Assert that the connection reestablished and the listener is reregistered.
+            await TestUtil.assertTrueEventually(async () => {
+                const activeConnections = client.getConnectionManager().getActiveConnections();
+                expect(activeConnections.length).to.be.equal(1);
 
-            testListener(done).catch(done);
+                const activeRegistrations = getActiveRegistrations(client, registrationId);
+                const connectionsThatHasListener = [...activeRegistrations.keys()];
+                expect(connectionsThatHasListener.length).to.be.equal(1);
+                expect(connectionsThatHasListener[0]).to.be.equal(activeConnections[0]);
+            });
+
+            await map.put('keyx', 'valx');
+            await deferred.promise;
         });
     });
 });
