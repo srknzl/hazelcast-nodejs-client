@@ -13,6 +13,26 @@ The test setup at Hazelcast lab environment is:
     + Make sure that all the client processes are up and running before killing the clients after 48 hours.
     + Analyse the outputs: Make sure that there are no errors printed.
 
+# How to run the soak test
+
+## Member
+
+1. Setup tcp ip
+
+
+```
+./start-client
+```
+
+## Client
+
+
+1. Setup clientConfig.json
+
+```
+./start-client
+```
+
 # Success Criteria
 
 1. No errors printed.

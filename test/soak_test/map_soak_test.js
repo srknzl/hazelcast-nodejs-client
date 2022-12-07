@@ -148,7 +148,7 @@ function completeOperation() {
 
 const cfg = {
     network: {
-        clusterMembers: []
+        clusterMembers: --- FIXME ---
     },
     serialization: {
         dataSerializableFactories: {
@@ -156,9 +156,6 @@ const cfg = {
         }
     }
 };
-for (let i = 2; i < process.argv.length; i++) {
-    cfg.network.clusterMembers[0] = process.argv[i];
-}
 
 (async () => {
     try {

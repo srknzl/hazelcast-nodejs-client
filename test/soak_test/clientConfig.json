@@ -1,0 +1,4 @@
+{
+    "hazelcastVersion": "STABLE.HAZELCAST.VERSION",
+    "clusterMembers": ["IP:PORT of one of members"]
+}
