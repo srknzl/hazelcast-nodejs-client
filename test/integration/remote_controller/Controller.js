@@ -50,6 +50,22 @@ HzRemoteController.prototype.createCluster = function(hzVersion, xmlConfig, call
     return this.client.createCluster(hzVersion, xmlConfig, callback);
 };
 
+HzRemoteController.prototype.createDockerCluster = function(dockerImageString, xmlconfigPath, callback) {
+    return this.client.createDockerCluster(dockerImageString, xmlconfigPath, callback);
+};
+
+HzRemoteController.prototype.shutdownDockerCluster = function(dockerClusterId, callback) {
+    return this.client.shutdownDockerCluster(dockerClusterId, callback);
+};
+
+HzRemoteController.prototype.startDockerMember = function(dockerClusterId, callback) {
+    return this.client.startDockerMember(dockerClusterId, callback);
+};
+
+HzRemoteController.prototype.shutdownDockerMember = function(dockerClusterId, containerId, callback) {
+    return this.client.shutdownDockerMember(dockerClusterId, containerId, callback);
+};
+
 HzRemoteController.prototype.createClusterKeepClusterName = function(hzVersion, xmlConfig, callback) {
     return this.client.createClusterKeepClusterName(hzVersion, xmlConfig, callback);
 };
@@ -74,12 +90,12 @@ HzRemoteController.prototype.terminateCluster = function(clusterId, callback) {
     return this.client.terminateCluster(clusterId, callback);
 };
 
-HzRemoteController.prototype.splitMemberFromCluster = function(memberId, callback) {
-    return this.client.splitMemberFromCluster(memberId, callback);
+HzRemoteController.prototype.splitClusterAs = function(dockerClusterId, brain1, brain2, callback) {
+    return this.client.splitClusterAs(dockerClusterId, brain1, brain2, callback);
 };
 
-HzRemoteController.prototype.mergeMemberToCluster = function(clusterId, memberId, callback) {
-    return this.client.mergeMemberToCluster(clusterId, memberId, callback);
+HzRemoteController.prototype.mergeCluster = function(dockerClusterId, callback) {
+    return this.client.mergeCluster(dockerClusterId, callback);
 };
 
 HzRemoteController.prototype.executeOnController = function(clusterId, script, lang, callback) {

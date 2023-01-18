@@ -122,6 +122,72 @@ function executeOnController(clusterId, script, lang) {
     return deferred.promise;
 }
 
+function createDockerCluster(dockerImageString, xmlconfigPath) {
+    const deferred = deferredPromise();
+    controller.createDockerCluster(dockerImageString, xmlconfigPath, (err, cluster) => {
+        if (err) {
+            return deferred.reject(err);
+        }
+        return deferred.resolve(cluster);
+    });
+    return deferred.promise;
+}
+
+function startDockerMember(dockerClusterId) {
+    const deferred = deferredPromise();
+    controller.startDockerMember(dockerClusterId, (err, member) => {
+        if (err) {
+            return deferred.reject(err);
+        }
+        return deferred.resolve(member);
+    });
+    return deferred.promise;
+}
+
+function shutdownDockerCluster(dockerClusterId) {
+    const deferred = deferredPromise();
+    controller.shutdownDockerCluster(dockerClusterId, (err, res) => {
+        if (err) {
+            return deferred.reject(err);
+        }
+        return deferred.resolve(res);
+    });
+    return deferred.promise;
+}
+
+function shutdownDockerMember(dockerClusterId, containerId) {
+    const deferred = deferredPromise();
+    controller.shutdownDockerMember(dockerClusterId, containerId, (err, res) => {
+        if (err) {
+            return deferred.reject(err);
+        }
+        return deferred.resolve(res);
+    });
+    return deferred.promise;
+}
+
+function splitClusterAs(dockerClusterId, brain1, brain2) {
+    const deferred = deferredPromise();
+    controller.splitClusterAs(dockerClusterId, brain1, brain2, (err, res) => {
+        if (err) {
+            return deferred.reject(err);
+        }
+        return deferred.resolve(res);
+    });
+    return deferred.promise;
+}
+
+function mergeCluster(dockerClusterId) {
+    const deferred = deferredPromise();
+    controller.mergeCluster(dockerClusterId, (err, res) => {
+        if (err) {
+            return deferred.reject(err);
+        }
+        return deferred.resolve(res);
+    });
+    return deferred.promise;
+}
+
 exports.exit = exit;
 exports.createCluster = createCluster;
 exports.createClusterKeepClusterName = createClusterKeepClusterName;
@@ -131,3 +197,10 @@ exports.shutdownCluster = shutdownCluster;
 exports.executeOnController = executeOnController;
 exports.terminateMember = terminateMember;
 exports.terminateCluster = terminateCluster;
+
+exports.createDockerCluster = createDockerCluster;
+exports.shutdownDockerCluster = shutdownDockerCluster;
+exports.startDockerMember = startDockerMember;
+exports.shutdownDockerMember = shutdownDockerMember;
+exports.splitClusterAs = splitClusterAs;
+exports.mergeCluster = mergeCluster;
