@@ -39,9 +39,20 @@ describe('SplitBrainRCTest', function () {
 
         client1 = await Client.newHazelcastClient({
             network: {
-                clusterMembers: [`${dockerMember1.host}:${dockerMember1.port}`, `${dockerMember2.host}:${dockerMember2.port}`,
-                 `${dockerMember3.host}:${dockerMember3.port}`, `${dockerMember4.host}:${dockerMember4.port}`,
-                  `${dockerMember5.host}:${dockerMember5.port}`]
+                clusterMembers: [`${dockerMember1.host}:${dockerMember1.port}`,`${dockerMember2.host}:${dockerMember2.port}`,
+                `${dockerMember3.host}:${dockerMember3.port}`,`${dockerMember5.host}:${dockerMember5.port}`,
+                `${dockerMember4.host}:${dockerMember4.port}`,],
+            },
+            membershipListeners: [{
+                memberAdded: (membershipEvent) => {
+                    console.log('member added', membershipEvent.member.toString());
+                },
+                memberRemoved: (membershipEvent) => {
+                    console.log('member removed', membershipEvent.member.toString());
+                }
+            }],
+            properties: {
+                'hazelcast.logging.level': 'trace'
             }
         });
     });
@@ -55,6 +66,14 @@ describe('SplitBrainRCTest', function () {
     });
 
     it('should be able to split brain and merge clusters', async function () {
+        const map = await client1.getMap('map');
+        await TestUtil.promiseWaitMilliseconds(6000);
+        await map.put('key', 'value');
+        await map.put('key2', 'value2');
+        await map.put('key3', 'value3');
+        await map.put('key4', 'value4');
+        await map.put('key5', 'value5');
+
         await RC.splitClusterAs(dockerCluster.id, [dockerMember1, dockerMember2], [dockerMember3, dockerMember4, dockerMember5]);
         await TestUtil.promiseWaitMilliseconds(50000);
         await RC.mergeCluster(dockerCluster.id);
