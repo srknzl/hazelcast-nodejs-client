@@ -122,9 +122,9 @@ function executeOnController(clusterId, script, lang) {
     return deferred.promise;
 }
 
-function createDockerCluster(dockerImageString, xmlconfigPath) {
+function createDockerCluster(dockerImageString, xmlconfigPath, enterpriseKey) {
     const deferred = deferredPromise();
-    controller.createDockerCluster(dockerImageString, xmlconfigPath, (err, cluster) => {
+    controller.createDockerCluster(dockerImageString, xmlconfigPath, enterpriseKey, (err, cluster) => {
         if (err) {
             return deferred.reject(err);
         }

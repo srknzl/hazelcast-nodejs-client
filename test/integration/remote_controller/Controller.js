@@ -50,8 +50,8 @@ HzRemoteController.prototype.createCluster = function(hzVersion, xmlConfig, call
     return this.client.createCluster(hzVersion, xmlConfig, callback);
 };
 
-HzRemoteController.prototype.createDockerCluster = function(dockerImageString, xmlconfigPath, callback) {
-    return this.client.createDockerCluster(dockerImageString, xmlconfigPath, callback);
+HzRemoteController.prototype.createDockerCluster = function(dockerImageString, xmlconfigPath, enterpriseKey, callback) {
+    return this.client.createDockerCluster(dockerImageString, xmlconfigPath, enterpriseKey, callback);
 };
 
 HzRemoteController.prototype.shutdownDockerCluster = function(dockerClusterId, callback) {

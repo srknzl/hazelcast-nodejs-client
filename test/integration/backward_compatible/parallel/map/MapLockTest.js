@@ -29,8 +29,8 @@ describe('SplitBrainRCTest', function () {
 
     before(async function () {
         TestUtil.markClientVersionAtLeast(this, '4.1');
-        dockerCluster = await RC.createDockerCluster('hazelcast/hazelcast:5.2.2-SNAPSHOT',
-            '/Users/serkan/forked/hazelcast-nodejs-client/config.xml');
+        dockerCluster = await RC.createDockerCluster('hazelcast/hazelcast:latest',
+            '/Users/serkan/forked/hazelcast-nodejs-client/config.xml', process.env['HAZELCAST_ENTERPRISE_KEY']);
         dockerMember1 = await RC.startDockerMember(dockerCluster.id);
         dockerMember2 = await RC.startDockerMember(dockerCluster.id);
         dockerMember3 = await RC.startDockerMember(dockerCluster.id);
@@ -39,8 +39,8 @@ describe('SplitBrainRCTest', function () {
 
         client1 = await Client.newHazelcastClient({
             network: {
-                clusterMembers: [`${dockerMember1.host}:${dockerMember1.port}`,`${dockerMember2.host}:${dockerMember2.port}`,
-                `${dockerMember3.host}:${dockerMember3.port}`,`${dockerMember5.host}:${dockerMember5.port}`,
+                clusterMembers: [`${dockerMember1.host}:${dockerMember1.port}`, `${dockerMember2.host}:${dockerMember2.port}`,
+                `${dockerMember3.host}:${dockerMember3.port}`, `${dockerMember5.host}:${dockerMember5.port}`,
                 `${dockerMember4.host}:${dockerMember4.port}`,],
             },
             membershipListeners: [{
@@ -59,7 +59,7 @@ describe('SplitBrainRCTest', function () {
 
     after(async function () {
         await RC.shutdownDockerCluster(dockerCluster.id);
-        await TestUtil.promiseWaitMilliseconds(50000);
+        await TestUtil.promiseWaitMilliseconds(20000);
         if (client1) {
             await client1.shutdown();
         }
@@ -75,8 +75,8 @@ describe('SplitBrainRCTest', function () {
         await map.put('key5', 'value5');
 
         await RC.splitClusterAs(dockerCluster.id, [dockerMember1, dockerMember2], [dockerMember3, dockerMember4, dockerMember5]);
-        await TestUtil.promiseWaitMilliseconds(50000);
+        await TestUtil.promiseWaitMilliseconds(20000);
         await RC.mergeCluster(dockerCluster.id);
-        await TestUtil.promiseWaitMilliseconds(50000);
+        await TestUtil.promiseWaitMilliseconds(20000);
     });
 });

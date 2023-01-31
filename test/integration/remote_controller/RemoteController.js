@@ -1277,12 +1277,16 @@ RemoteController_resumeMember_result.prototype.write = function(output) {
 var RemoteController_createDockerCluster_args = function(args) {
   this.dockerImageString = null;
   this.xmlconfigPath = null;
+  this.hazelcastEnterpriseLicenseKey = null;
   if (args) {
     if (args.dockerImageString !== undefined && args.dockerImageString !== null) {
       this.dockerImageString = args.dockerImageString;
     }
     if (args.xmlconfigPath !== undefined && args.xmlconfigPath !== null) {
       this.xmlconfigPath = args.xmlconfigPath;
+    }
+    if (args.hazelcastEnterpriseLicenseKey !== undefined && args.hazelcastEnterpriseLicenseKey !== null) {
+      this.hazelcastEnterpriseLicenseKey = args.hazelcastEnterpriseLicenseKey;
     }
   }
 };
@@ -1311,6 +1315,13 @@ RemoteController_createDockerCluster_args.prototype.read = function(input) {
         input.skip(ftype);
       }
       break;
+      case 3:
+      if (ftype == Thrift.Type.STRING) {
+        this.hazelcastEnterpriseLicenseKey = input.readString();
+      } else {
+        input.skip(ftype);
+      }
+      break;
       default:
         input.skip(ftype);
     }
@@ -1330,6 +1341,11 @@ RemoteController_createDockerCluster_args.prototype.write = function(output) {
   if (this.xmlconfigPath !== null && this.xmlconfigPath !== undefined) {
     output.writeFieldBegin('xmlconfigPath', Thrift.Type.STRING, 2);
     output.writeString(this.xmlconfigPath);
+    output.writeFieldEnd();
+  }
+  if (this.hazelcastEnterpriseLicenseKey !== null && this.hazelcastEnterpriseLicenseKey !== undefined) {
+    output.writeFieldBegin('hazelcastEnterpriseLicenseKey', Thrift.Type.STRING, 3);
+    output.writeString(this.hazelcastEnterpriseLicenseKey);
     output.writeFieldEnd();
   }
   output.writeFieldStop();
@@ -3779,7 +3795,7 @@ RemoteControllerClient.prototype.recv_resumeMember = function(input,mtype,rseqid
   return callback('resumeMember failed: unknown result');
 };
 
-RemoteControllerClient.prototype.createDockerCluster = function(dockerImageString, xmlconfigPath, callback) {
+RemoteControllerClient.prototype.createDockerCluster = function(dockerImageString, xmlconfigPath, hazelcastEnterpriseLicenseKey, callback) {
   this._seqid = this.new_seqid();
   if (callback === undefined) {
     var _defer = Q.defer();
@@ -3790,19 +3806,20 @@ RemoteControllerClient.prototype.createDockerCluster = function(dockerImageStrin
         _defer.resolve(result);
       }
     };
-    this.send_createDockerCluster(dockerImageString, xmlconfigPath);
+    this.send_createDockerCluster(dockerImageString, xmlconfigPath, hazelcastEnterpriseLicenseKey);
     return _defer.promise;
   } else {
     this._reqs[this.seqid()] = callback;
-    this.send_createDockerCluster(dockerImageString, xmlconfigPath);
+    this.send_createDockerCluster(dockerImageString, xmlconfigPath, hazelcastEnterpriseLicenseKey);
   }
 };
 
-RemoteControllerClient.prototype.send_createDockerCluster = function(dockerImageString, xmlconfigPath) {
+RemoteControllerClient.prototype.send_createDockerCluster = function(dockerImageString, xmlconfigPath, hazelcastEnterpriseLicenseKey) {
   var output = new this.pClass(this.output);
   var params = {
     dockerImageString: dockerImageString,
-    xmlconfigPath: xmlconfigPath
+    xmlconfigPath: xmlconfigPath,
+    hazelcastEnterpriseLicenseKey: hazelcastEnterpriseLicenseKey
   };
   var args = new RemoteController_createDockerCluster_args(params);
   try {
@@ -5171,10 +5188,11 @@ RemoteControllerProcessor.prototype.process_createDockerCluster = function(seqid
   var args = new RemoteController_createDockerCluster_args();
   args.read(input);
   input.readMessageEnd();
-  if (this._handler.createDockerCluster.length === 2) {
+  if (this._handler.createDockerCluster.length === 3) {
     Q.fcall(this._handler.createDockerCluster.bind(this._handler),
       args.dockerImageString,
-      args.xmlconfigPath
+      args.xmlconfigPath,
+      args.hazelcastEnterpriseLicenseKey
     ).then(function(result) {
       var result_obj = new RemoteController_createDockerCluster_result({success: result});
       output.writeMessageBegin("createDockerCluster", Thrift.MessageType.REPLY, seqid);
@@ -5195,7 +5213,7 @@ RemoteControllerProcessor.prototype.process_createDockerCluster = function(seqid
       output.flush();
     });
   } else {
-    this._handler.createDockerCluster(args.dockerImageString, args.xmlconfigPath, function (err, result) {
+    this._handler.createDockerCluster(args.dockerImageString, args.xmlconfigPath, args.hazelcastEnterpriseLicenseKey, function (err, result) {
       var result_obj;
       if ((err === null || typeof err === 'undefined') || err instanceof ttypes.ServerException) {
         result_obj = new RemoteController_createDockerCluster_result((err !== null || typeof err === 'undefined') ? err : {success: result});
