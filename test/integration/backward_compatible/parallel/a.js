@@ -25,7 +25,6 @@ const { Client } = require('../../../../lib');
 describe('SplitBrainRCTest', function () {
     let dockerClusterId;
     let client;
-    let container;
     let dockerMember1Id, dockerMember2Id, dockerMember3Id, dockerMember4Id, dockerMember5Id;
 
     before(async function () {
@@ -41,7 +40,6 @@ describe('SplitBrainRCTest', function () {
         dockerMember5Id = process.env['DOCKER_MEMBER_5_ID'];
         const dockerMember5Host = process.env['DOCKER_MEMBER_5_HOST'];
         dockerClusterId = process.env['DOCKER_CLUSTER_ID'];
-
         client = await Client.newHazelcastClient({
             network: {
                 clusterMembers: [`${dockerMember1Host}:5701`, `${dockerMember2Host}:5701`, `${dockerMember3Host}:5701`,
@@ -64,7 +62,7 @@ describe('SplitBrainRCTest', function () {
 
     after(async function () {
         await RC.shutdownDockerCluster(dockerClusterId);
-        await container.stop();
+        await client.shutdown();
     });
 
     it('should be able to split brain and merge clusters', async function () {
@@ -75,7 +73,6 @@ describe('SplitBrainRCTest', function () {
         await map.put('key3', 'value3');
         await map.put('key4', 'value4');
         await map.put('key5', 'value5');
-
         await RC.splitClusterAs(dockerClusterId, [dockerMember1Id, dockerMember2Id],
             [dockerMember3Id, dockerMember4Id, dockerMember5Id]);
         await TestUtil.promiseWaitMilliseconds(20000);

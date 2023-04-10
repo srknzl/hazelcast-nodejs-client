@@ -36,7 +36,9 @@ describe('notimportant', function () {
         const member4 = await RC.startDockerMember(dockerCluster.id);
         const member5 = await RC.startDockerMember(dockerCluster.id);
 
-        const network = new StartedNetwork(dockerCluster.networkId, {});
+        const network = new StartedNetwork(dockerCluster.networkId, {
+            name: 'hazelcast-network-' + dockerCluster.id,
+        });
         container = await new GenericContainer('nodejs-docker-splitbrain-image')
                     .withNetwork(network)
                     .withExtraHosts([{
@@ -55,12 +57,13 @@ describe('notimportant', function () {
                         DOCKER_MEMBER_4_HOST: member4.host,
                         DOCKER_MEMBER_5_ID: member5.containerId,
                         DOCKER_MEMBER_5_HOST: member5.host,
-                        DOCKER_ENV: 'true'
+                        DOCKER_ENV: 'true',
+                        HAZELCAST_ENTERPRISE_KEY: process.env.HAZELCAST_ENTERPRISE_KEY
                     }).start();
     });
 
     it('should be able to split brain and merge clusters', async function () {
-        await TestUtil.promiseWaitMilliseconds(200000);
+        await TestUtil.promiseWaitMilliseconds(20000000);
     });
 
     after(async function () {

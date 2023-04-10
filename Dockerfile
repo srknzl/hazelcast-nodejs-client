@@ -14,6 +14,7 @@ COPY package.json /app
 COPY lib /app/lib
 COPY test /app/test
 COPY hazelcast-remote-controller-0.8-SNAPSHOT.jar /app
+COPY *.json /app
 COPY scripts /app/scripts
 
 RUN npm install
