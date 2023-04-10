@@ -39,22 +39,19 @@ describe('notimportant', function () {
         const network = new StartedNetwork(dockerCluster.networkId, {});
         container = await new GenericContainer('nodejs-docker-splitbrain-image')
                     .withNetwork(network)
-                    // .withExtraHosts([{
-                    //     host: 'host.docker.internal',
-                    //     ipAddress: 'host-gateway'
-                    // }])
                     .withEnvironment({
-                        'DOCKER_CLUSTER_ID': dockerCluster.id,
-                        'DOCKER_MEMBER_1_ID': member1.containerId,
-                        'DOCKER_MEMBER_1_HOST': member1.host,
-                        'DOCKER_MEMBER_2_ID': member2.containerId,
-                        'DOCKER_MEMBER_2_HOST': member2.host,
-                        'DOCKER_MEMBER_3_ID': member3.containerId,
-                        'DOCKER_MEMBER_3_HOST': member3.host,
-                        'DOCKER_MEMBER_4_ID': member4.containerId,
-                        'DOCKER_MEMBER_4_HOST': member4.host,
-                        'DOCKER_MEMBER_5_ID': member5.containerId,
-                        'DOCKER_MEMBER_5_HOST': member5.host,
+                        DOCKER_CLUSTER_ID: dockerCluster.id,
+                        DOCKER_MEMBER_1_ID: member1.containerId,
+                        DOCKER_MEMBER_1_HOST: member1.host,
+                        DOCKER_MEMBER_2_ID: member2.containerId,
+                        DOCKER_MEMBER_2_HOST: member2.host,
+                        DOCKER_MEMBER_3_ID: member3.containerId,
+                        DOCKER_MEMBER_3_HOST: member3.host,
+                        DOCKER_MEMBER_4_ID: member4.containerId,
+                        DOCKER_MEMBER_4_HOST: member4.host,
+                        DOCKER_MEMBER_5_ID: member5.containerId,
+                        DOCKER_MEMBER_5_HOST: member5.host,
+                        DOCKER_ENV: 'true'
                     }).start();
     });
 

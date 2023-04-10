@@ -22,7 +22,7 @@ function HzRemoteController() {
     const transport = thrift.TFramedTransport;
     const protocol = thrift.TBinaryProtocol;
 
-    const connection = thrift.createConnection('localhost', 9701, {
+    const connection = thrift.createConnection(process.env.DOCKER_ENV ? 'host.docker.internal' : 'localhost', 9701, {
         transport: transport,
         protocol: protocol
     });
