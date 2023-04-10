@@ -39,6 +39,10 @@ describe('notimportant', function () {
         const network = new StartedNetwork(dockerCluster.networkId, {});
         container = await new GenericContainer('nodejs-docker-splitbrain-image')
                     .withNetwork(network)
+                    .withExtraHosts([{
+                        host: 'host.docker.internal',
+                        ipAddress: 'host-gateway'
+                    }])
                     .withEnvironment({
                         DOCKER_CLUSTER_ID: dockerCluster.id,
                         DOCKER_MEMBER_1_ID: member1.containerId,
