@@ -24,6 +24,7 @@ const DEV_CLUSTER_CONFIG = `
 `;
 const ON_WINDOWS = os.platform() === 'win32';
 const HAZELCAST_ENTERPRISE_KEY = process.env.HAZELCAST_ENTERPRISE_KEY ? process.env.HAZELCAST_ENTERPRISE_KEY : '';
+const RC_HOST = process.env.DOCKER_ENV ? 'host.docker.internal' : 'localhost';
 const PATH_SEPARATOR = ON_WINDOWS ? ';' : ':';
 
 let cluster; // We create a cluster for checking code samples
@@ -69,6 +70,10 @@ const getRC = () => {
 
 const startRC = async () => {
     console.log('Starting Hazelcast Remote Controller ... oss ...');
+    const addressReachable = await isAddressReachable(RC_HOST, 9701, 5000);
+    if (addressReachable) {
+        return;
+    }
     if (ON_WINDOWS) {
         const outFD = fs.openSync('rc_stdout.log', 'w');
         const errFD = fs.openSync('rc_stderr.log', 'w');
@@ -114,14 +119,14 @@ const startRC = async () => {
     const retryCount = 100;
 
     for (let i = 0; i < retryCount; i++) {
-        console.log('Trying to connect to Hazelcast Remote Controller (127.0.0.1:9701)...');
-        const addressReachable = await isAddressReachable('127.0.0.1', 9701, 5000);
+        console.log(`Trying to connect to Hazelcast Remote Controller (${RC_HOST}:9701)...`);
+        const addressReachable = await isAddressReachable(RC_HOST, 9701, 5000);
         if (addressReachable) {
             return;
         }
         await new Promise(r => setTimeout(r, 1000));
     }
-    throw `Could not reach to Hazelcast Remote Controller (127.0.0.1:9701) after trying ${retryCount} times.`;
+    throw `Could not reach to Hazelcast Remote Controller (${RC_HOST}:9701) after trying ${retryCount} times.`;
 };
 
 const shutdown = async () => {

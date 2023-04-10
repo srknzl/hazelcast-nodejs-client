@@ -24,7 +24,7 @@ const {
     ByteArraySerializer,
     JsonSerializer,
     IntegerArraySerializer
-} = require('../../../src/serialization/DefaultSerializers');
+} = require('../../../lib/serialization/DefaultSerializers');
 const {
     Predicates,
     RestValue,
